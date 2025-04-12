@@ -15,7 +15,7 @@ A refined architecture designed for a 3D code editor, focusing on modularity, pe
 ┌───────────────▼─────────────┐
 │         Core Layer          │
 ├─────────────────────────────┤
-│ 1. ECS Framework            │
+│ 1. ECS Framework (Flecs)    │
 │ 2. Event System             │
 │ 3. Memory Management        │
 │ 4. Error Handling           │
@@ -37,31 +37,19 @@ A refined architecture designed for a 3D code editor, focusing on modularity, pe
 
 ## Key Components
 
-### Enhanced Entity Component System (ECS)
-```c
-// ecs.h
-typedef struct {
-    uint32_t id;
-    uint32_t version;
-} EntityId;
+### Entity Component System (ECS) - Flecs
 
-typedef struct {
-    void* data;
-    size_t size;
-    size_t capacity;
-    size_t component_size;
-    uint32_t* sparse_map;  // For O(1) entity lookups
-} ComponentPool;
+Instead of a custom implementation, Pevi will leverage the **Flecs** library (https://github.com/SanderMertens/flecs). Flecs is a fast and flexible open-source Entity Component System framework for C/C++.
 
-typedef struct {
-    EntityId* entities;
-    size_t count;
-    size_t capacity;
-    ComponentPool* pools;
-    size_t pool_count;
-    uint32_t next_id;
-} Registry;
-```
+**Rationale for using Flecs:**
+*   **Maturity and Stability:** Flecs is a well-established library with a strong community and ongoing development.
+*   **Performance:** Highly optimized for cache efficiency and low overhead.
+*   **Rich Feature Set:** Offers features like relationships, hierarchies, systems scheduling, reflection, and more out-of-the-box.
+*   **Reduced Development Time:** Avoids the need to implement, test, and maintain a complex custom ECS framework.
+
+**Integration:**
+*   Core game logic, entities (like Phantoms, Cursors), and their associated data (components) will be managed by the Flecs world (`ecs_world_t`).
+*   Systems (logic operating on components) will be defined using the Flecs API.
 
 ### Improved Event System
 ```c
@@ -86,7 +74,7 @@ typedef struct {
     void* data;
     size_t data_size;
     bool handled;  // Allow event consumption
-    EntityId source_entity;  // Optional source entity
+    EntityId source_entity;  // Optional source entity (Flecs entity ID)
 } Event;
 
 // Event subscription with filtering
@@ -141,6 +129,7 @@ typedef struct {
     struct lr_cell* needle;
 } CursorComponent;
 ```
+*Note: These components will be registered with and managed by the Flecs ECS world.*
 
 ### Input System with State Machine
 ```c
@@ -156,13 +145,13 @@ typedef enum {
 typedef struct {
     InputState current_state;
     InputState previous_state;
-    
+
     // State transition table
     bool (*transitions[5][5])(InputEvent_t* event);
-    
+
     // State handlers
     void (*state_handlers[5])(InputEvent_t* event);
-    
+
     // Input contexts
     InputContext_t* contexts[5];
     InputContext_t* active_context;
@@ -226,17 +215,17 @@ typedef struct {
 
 ## Data Flow
 ```
-1. Input → State Machine → Event System → Domain Systems
-2. File I/O → Buffer System → Phantom Components
-3. ECS Registry → Rendering Pipeline → Display
-4. Command → Event → System Updates
+1. Input → State Machine → Event System → Domain Systems (via Flecs)
+2. File I/O → Buffer System → Phantom Components (in Flecs)
+3. Flecs Registry → Rendering Pipeline → Display
+4. Command → Event → System Updates (via Flecs)
 5. Config Changes → Event → System Reconfiguration
 ```
 
 ## Implementation Strategy
 
 ### Phase 1: Core Infrastructure
-1. Implement ECS Framework
+1. Integrate Flecs ECS Framework
 2. Build Event System with priorities
 3. Develop Memory Management with contexts
 4. Create Error Handling system
@@ -244,20 +233,20 @@ typedef struct {
 
 ### Phase 2: Domain Layer
 1. Text Engine with UTF-8 support
-2. Phantom System using ECS components
+2. Phantom System using Flecs components and systems
 3. Buffer System with efficient operations
 4. Command System with history
 5. Camera System with multiple modes
 
 ### Phase 3: Services Layer
-1. Renderer with layer-based pipeline
+1. Renderer with layer-based pipeline (interacting with Flecs for renderable entities)
 2. Input System with state machine
 3. File I/O with async operations
 4. UI System with immediate-mode interface
 5. Logger with multiple outputs
 
 ### Phase 4: Application Layer
-1. Plugin System with dynamic loading
+1. Plugin System with dynamic loading (potentially leveraging Flecs modules)
 2. Project Management
 3. Integration testing
 4. Performance optimization
@@ -266,18 +255,19 @@ typedef struct {
 ## Benefits
 
 - **Clear Separation of Concerns**: Domain logic separated from technical services
-- **Improved Performance**: ECS with sparse sets for O(1) entity lookups
+- **High Performance**: Leverages the optimized Flecs ECS core.
 - **Flexible Event Handling**: Priorities and filtering for better control
 - **State-Based Input**: Clear transitions between editor modes
 - **Configurable Rendering**: Layer-based approach for extensibility
 - **Memory Optimization**: Context-based allocation for better resource management
 - **Plugin Architecture**: Designed for extension from the start
+- **Leverages Mature ECS**: Benefits from Flecs' features, stability, and community support.
 
 ## Tech Stack
 
 | Layer          | Technology          |
 |----------------|---------------------|
-| Core           | C11                 |
+| Core           | C11, Flecs          |
 | Math           | Raymath             |
 | Rendering      | Raylib              |
 | Windowing      | Raylib              |
