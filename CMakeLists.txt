@@ -7,30 +7,22 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_C_EXTENSIONS OFF) # Optional: Disable GNU extensions if strict C11 is desired
 
 # --- Find Dependencies ---
+include(FetchContent)
+
+# Clone and build joltc
+FetchContent_Declare(
+    joltc
+    GIT_REPOSITORY https://github.com/amerkoleci/joltc.git
+    GIT_TAG main
+)
+FetchContent_MakeAvailable(joltc)
+
 # Find the Raylib library
 # This assumes Raylib has been installed in a way CMake can find it
 # (e.g., system-wide, or RAYLIB_ROOT environment variable is set)
 find_package(raylib REQUIRED)
 find_package(libuv REQUIRED)
 
-find_library(JOLTC_LIBRARIES
-    NAMES joltc joltc
-    PATHS /usr/lib /usr/local/lib
-)
-
-find_path(JOLTC_INCLUDE_DIRS
-    NAMES joltc.h
-    PATHS /usr/local/include/Jolt /usr/include /usr/local/include
-)
-
-
-if(NOT JOLTC_LIBRARIES OR NOT JOLTC_INCLUDE_DIRS)
-    message(FATAL_ERROR "joltc not found!")
-endif()
-
-# Found the libraries, so print them out
-message(STATUS "Found JoltC libraries: ${JOLTC_LIBRARIES}")
-message(STATUS "Found JoltC includes: ${JOLTC_INCLUDE_DIRS}")
 
 # --- Project Sources ---
 # Define the source files for the main executable
@@ -43,9 +35,9 @@ target_include_directories(editor PRIVATE src)
 
 # --- Link Dependencies ---
 # Link the executable against dependencies
-target_include_directories(editor PRIVATE {$JOLTC_INCLUDE_DIRS})
+target_include_directories(editor PRIVATE ${joltc_SOURCE_DIR}/include)
 target_link_libraries(editor PRIVATE
-    ${JOLTC_LIBRARIES}
+    joltc
 )
 
 # --- Build Configuration ---
