@@ -11,6 +11,26 @@ set(CMAKE_C_EXTENSIONS OFF) # Optional: Disable GNU extensions if strict C11 is 
 # This assumes Raylib has been installed in a way CMake can find it
 # (e.g., system-wide, or RAYLIB_ROOT environment variable is set)
 find_package(raylib REQUIRED)
+find_package(libuv REQUIRED)
+
+find_library(JOLTC_LIBRARIES
+    NAMES joltc joltc
+    PATHS /usr/lib /usr/local/lib
+)
+
+find_path(JOLTC_INCLUDE_DIRS
+    NAMES joltc.h
+    PATHS /usr/local/include/Jolt /usr/include /usr/local/include
+)
+
+
+if(NOT JOLTC_LIBRARIES OR NOT JOLTC_INCLUDE_DIRS)
+    message(FATAL_ERROR "joltc not found!")
+endif()
+
+# Found the libraries, so print them out
+message(STATUS "Found JoltC libraries: ${JOLTC_LIBRARIES}")
+message(STATUS "Found JoltC includes: ${JOLTC_INCLUDE_DIRS}")
 
 # --- Project Sources ---
 # Define the source files for the main executable
@@ -22,8 +42,11 @@ add_executable(editor src/main.c)
 target_include_directories(editor PRIVATE src)
 
 # --- Link Dependencies ---
-# Link the executable against Raylib
-target_link_libraries(editor PRIVATE raylib)
+# Link the executable against dependencies
+target_include_directories(editor PRIVATE {$JOLTC_INCLUDE_DIRS})
+target_link_libraries(editor PRIVATE
+    ${JOLTC_LIBRARIES}
+)
 
 # --- Build Configuration ---
 # Set a default build type if none is specified (e.g., Release, Debug)
