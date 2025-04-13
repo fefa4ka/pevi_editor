@@ -22,6 +22,7 @@ FetchContent_MakeAvailable(joltc)
 # (e.g., system-wide, or RAYLIB_ROOT environment variable is set)
 find_package(raylib REQUIRED)
 find_package(libuv REQUIRED)
+find_package(flecs REQUIRED)
 
 
 # --- Project Sources ---
@@ -38,6 +39,9 @@ target_include_directories(editor PRIVATE src)
 target_include_directories(editor PRIVATE ${joltc_SOURCE_DIR}/include)
 target_link_libraries(editor PRIVATE
     joltc
+    raylib
+    flecs::flecs_static
+    libuv::uv_a
 )
 
 # --- Build Configuration ---
@@ -61,6 +65,10 @@ message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Raylib Found: ${raylib_FOUND}")
 message(STATUS "Raylib Include Dirs: ${raylib_INCLUDE_DIRS}")
 message(STATUS "Raylib Libraries: ${raylib_LIBRARIES}")
+# Flecs
+message(STATUS "Flecs Found: ${flecs_FOUND}")
+message(STATUS "Flecs Include Dirs: ${flecs_INCLUDE_DIRS}")
+message(STATUS "Flecs Libraries: ${flecs_LIBRARIES}")
 message(STATUS "Configuring done")
 
 # --- Installation (Optional Example) ---
