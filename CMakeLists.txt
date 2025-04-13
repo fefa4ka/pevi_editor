@@ -59,6 +59,9 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(editor PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
+# Add examples subdirectory
+add_subdirectory(examples)
+
 # --- Output ---
 # Print configuration summary
 message(STATUS "Project Name: ${PROJECT_NAME}")
