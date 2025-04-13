@@ -15,7 +15,15 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/amerkoleci/joltc.git
     GIT_TAG main
 )
-FetchContent_MakeAvailable(joltc)
+
+# Clone and build raylib-cimgui
+FetchContent_Declare(
+    raylib-cimgui
+    GIT_REPOSITORY https://github.com/alfredbaudisch/raylib-cimgui.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(joltc raylib-cimgui)
 
 # Find the Raylib library
 # This assumes Raylib has been installed in a way CMake can find it
@@ -32,7 +40,10 @@ add_executable(editor src/main.c)
 
 # --- Include Directories ---
 # Add the 'src' directory to the include path
-target_include_directories(editor PRIVATE src)
+target_include_directories(editor PRIVATE 
+    src
+    ${raylib-cimgui_SOURCE_DIR}/src
+)
 
 # --- Link Dependencies ---
 # Link the executable against dependencies
@@ -43,6 +54,7 @@ target_link_libraries(editor PRIVATE
     joltc
     flecs::flecs_static
     libuv::uv_a
+    raylib-cimgui
     stdc++
 )
 
