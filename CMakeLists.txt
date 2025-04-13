@@ -24,6 +24,15 @@ find_package(raylib REQUIRED)
 find_package(libuv REQUIRED)
 find_package(flecs REQUIRED)
 
+# On macOS, we need to link against these frameworks for raylib
+if(APPLE)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(OPENGL_LIBRARY OpenGL)
+    find_library(IOKIT_LIBRARY IOKit)
+    find_library(COREVIDEO_LIBRARY CoreVideo)
+    find_library(GLFW_LIBRARY glfw)
+endif()
+
 # --- Project Sources ---
 # Define the source files for the main executable
 # Assuming the main entry point is src/main.c
@@ -42,6 +51,17 @@ target_link_libraries(editor PRIVATE
     flecs::flecs_static
     libuv::uv_a
 )
+
+# Add macOS-specific frameworks
+if(APPLE)
+    target_link_libraries(editor PRIVATE
+        ${COCOA_LIBRARY}
+        ${OPENGL_LIBRARY}
+        ${IOKIT_LIBRARY}
+        ${COREVIDEO_LIBRARY}
+        ${GLFW_LIBRARY}
+    )
+endif()
 
 # --- Build Configuration ---
 # Set a default build type if none is specified (e.g., Release, Debug)
