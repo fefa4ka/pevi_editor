@@ -24,7 +24,6 @@ find_package(raylib REQUIRED)
 find_package(libuv REQUIRED)
 find_package(flecs REQUIRED)
 
-
 # --- Project Sources ---
 # Define the source files for the main executable
 # Assuming the main entry point is src/main.c
