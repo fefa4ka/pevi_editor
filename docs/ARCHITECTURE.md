@@ -1,7 +1,7 @@
 # Pevi Editor Architecture
 
 ## Overview
-A refined architecture designed for a 3D code editor, focusing on modularity, performance, and extensibility:
+Architecture designed for a 3D code editor, focusing on modularity, performance, and extensibility:
 
 ```
 ┌─────────────────────────────┐
@@ -16,7 +16,7 @@ A refined architecture designed for a 3D code editor, focusing on modularity, pe
 │         Core Layer          │
 ├─────────────────────────────┤
 │ 1. ECS Framework (Flecs)    │
-│ 2. Event System             │
+│ 2. libuv Event Loop         │
 │ 3. Memory Management        │
 │ 4. Error Handling           │
 │ 5. Configuration System     │
@@ -37,6 +37,21 @@ A refined architecture designed for a 3D code editor, focusing on modularity, pe
 
 ## Key Components
 
+### Physics Engine - JoltPhysics
+
+Pevi integrates the **JoltPhysics** engine (https://github.com/jrouwe/JoltPhysics) via its C API (JoltC) to provide realistic physics simulation for the 3D editor environment. This enables:
+
+* **Physical Interaction**: Phantoms can be physically manipulated with realistic physics
+* **Collision Detection**: Prevents phantoms from intersecting each other
+* **Spatial Awareness**: Physics-based organization of code elements
+* **Dynamic Behavior**: Natural movement and positioning of UI elements
+
+**Integration:**
+* Physics bodies are created for each phantom
+* Collision shapes match the visual representation
+* Physics simulation runs in a separate thread via the JobSystem
+* Two collision layers are used: one for static elements and one for dynamic elements
+
 ### Entity Component System (ECS) - Flecs
 
 Instead of a custom implementation, Pevi will leverage the **Flecs** library (https://github.com/SanderMertens/flecs). Flecs is a fast and flexible open-source Entity Component System framework for C/C++.
@@ -51,61 +66,7 @@ Instead of a custom implementation, Pevi will leverage the **Flecs** library (ht
 *   Core game logic, entities (like Phantoms, Cursors), and their associated data (components) will be managed by the Flecs world (`ecs_world_t`).
 *   Systems (logic operating on components) will be defined using the Flecs API.
 
-### Improved Event System
-```c
-// event.h
-typedef enum {
-    EVENT_INPUT_KEY,
-    EVENT_FILE_LOADED,
-    EVENT_PHANTOM_SELECTED,
-    EVENT_MODE_CHANGED,
-    EVENT_BUFFER_MODIFIED
-} EventType;
-
-typedef enum {
-    EVENT_PRIORITY_HIGH,
-    EVENT_PRIORITY_NORMAL,
-    EVENT_PRIORITY_LOW
-} EventPriority;
-
-typedef struct {
-    EventType type;
-    EventPriority priority;
-    void* data;
-    size_t data_size;
-    bool handled;  // Allow event consumption
-    EntityId source_entity;  // Optional source entity (Flecs entity ID)
-} Event;
-
-// Event subscription with filtering
-typedef bool (*EventFilter)(const Event* event, void* user_data);
-typedef void (*EventHandler)(const Event* event, void* user_data);
-```
-
-### Memory Management with Contexts
-```c
-// memory.h
-typedef enum {
-    MEMORY_CONTEXT_PERSISTENT,  // Long-lived allocations
-    MEMORY_CONTEXT_FRAME,       // Cleared every frame
-    MEMORY_CONTEXT_TEMP,        // Short-lived allocations
-    MEMORY_CONTEXT_ASSET,       // Asset-related allocations
-    MEMORY_CONTEXT_UI           // UI-related allocations
-} MemoryContext;
-
-typedef struct {
-    void* ptr;
-    size_t size;
-    MemoryContext context;
-    const char* file;
-    int line;
-    const char* function;
-    uint64_t timestamp;
-    bool freed;
-} MemoryAllocation;
-```
-
-### Phantom Component System
+#### Phantom Component System
 ```c
 // Components for ECS
 typedef struct {
@@ -118,7 +79,7 @@ typedef struct {
     BufferId buffer_id;  // Reference to buffer
     size_t line_from;
     size_t line_to;
-    FontSettings_t font;
+    FontSettings font;
     Color color;
 } PhantomComponent;
 
@@ -128,148 +89,118 @@ typedef struct {
     struct lr_cell* owner;
     struct lr_cell* needle;
 } CursorComponent;
+
+typedef struct {
+    JPH_Body* body;           // JoltPhysics body
+    JPH_Shape* shape;         // Collision shape
+    JPH_BodyID body_id;       // Body identifier
+    JPH_MotionType motion_type; // Static, dynamic, or kinematic
+    float mass;               // Mass of the physics body
+    float restitution;        // Bounciness factor
+    float friction;           // Surface friction
+} PhysicsComponent;
 ```
 *Note: These components will be registered with and managed by the Flecs ECS world.*
+                           
 
-### Input System with State Machine
-```c
-// input.h
-typedef enum {
-    INPUT_STATE_FREE,
-    INPUT_STATE_EDIT,
-    INPUT_STATE_COMMAND,
-    INPUT_STATE_DRAG_START,
-    INPUT_STATE_DRAG_ON
-} InputState;
+### Event System with libuv
 
-typedef struct {
-    InputState current_state;
-    InputState previous_state;
+Instead of a custom event bus implementation, Pevi will leverage the **libuv** library (https://github.com/libuv/libuv) for event handling and asynchronous I/O operations.
 
-    // State transition table
-    bool (*transitions[5][5])(InputEvent_t* event);
+**Rationale for using libuv:**
+* **Cross-platform:** Works consistently across different operating systems
+* **Performance:** Highly optimized event loop with minimal overhead
+* **Mature Ecosystem:** Well-tested in production environments (Node.js, etc.)
+* **Rich Feature Set:** Provides timers, file I/O, networking, and more
+* **Reduced Development Time:** Avoids implementing a custom event system
 
-    // State handlers
-    void (*state_handlers[5])(InputEvent_t* event);
-
-    // Input contexts
-    InputContext_t* contexts[5];
-    InputContext_t* active_context;
-} InputStateMachine;
-```
-
-### Rendering Pipeline with Layers
-```c
-// render.h
-typedef enum {
-    RENDER_LAYER_BACKGROUND,
-    RENDER_LAYER_GRID,
-    RENDER_LAYER_PHANTOMS,
-    RENDER_LAYER_UI,
-    RENDER_LAYER_DEBUG
-} RenderLayer;
-
-typedef struct {
-    RenderLayer layer;
-    int priority;
-    void (*render_fn)(void* user_data);
-    void* user_data;
-    bool enabled;
-} RenderPass;
-
-typedef struct {
-    RenderPass* passes;
-    size_t pass_count;
-    Camera_t* camera;
-    bool wireframe_mode;
-    bool debug_mode;
-} RenderPipeline;
-```
-
-### Configuration System
-```c
-// config.h
-typedef enum {
-    CONFIG_TYPE_INT,
-    CONFIG_TYPE_FLOAT,
-    CONFIG_TYPE_STRING,
-    CONFIG_TYPE_BOOL,
-    CONFIG_TYPE_COLOR,
-    CONFIG_TYPE_VECTOR3
-} ConfigType;
-
-typedef struct {
-    const char* key;
-    ConfigType type;
-    union {
-        int int_value;
-        float float_value;
-        char* string_value;
-        bool bool_value;
-        Color color_value;
-        Vector3 vector3_value;
-    } value;
-    void (*on_change)(const char* key, void* old_value, void* new_value);
-} ConfigEntry;
-```
 
 ## Data Flow
 ```
-1. Input → State Machine → Event System → Domain Systems (via Flecs)
-2. File I/O → Buffer System → Phantom Components (in Flecs)
+1. Input → State Machine → libuv Event Loop → Domain Systems (via Flecs)
+2. File I/O → libuv Async Operations → Buffer System → Phantom Components (in Flecs)
 3. Flecs Registry → Rendering Pipeline → Display
-4. Command → Event → System Updates (via Flecs)
-5. Config Changes → Event → System Reconfiguration
+4. Command → libuv Event → System Updates (via Flecs)
+5. Config Changes → libuv Event → System Reconfiguration
+6. Plugin Messages → libuv Event Queue → Plugin Handler → System Updates
+7. Timer Events → libuv Timer Callbacks → Scheduled Operations
+8. Network I/O → libuv TCP/UDP Handlers → Data Processing Pipeline
 ```
-
-## Implementation Strategy
-
-### Phase 1: Core Infrastructure
-1. Integrate Flecs ECS Framework
-2. Build Event System with priorities
-3. Develop Memory Management with contexts
-4. Create Error Handling system
-5. Implement Configuration System
-
-### Phase 2: Domain Layer
-1. Text Engine with UTF-8 support
-2. Phantom System using Flecs components and systems
-3. Buffer System with efficient operations
-4. Command System with history
-5. Camera System with multiple modes
-
-### Phase 3: Services Layer
-1. Renderer with layer-based pipeline (interacting with Flecs for renderable entities)
-2. Input System with state machine
-3. File I/O with async operations
-4. UI System with immediate-mode interface
-5. Logger with multiple outputs
-
-### Phase 4: Application Layer
-1. Plugin System with dynamic loading (potentially leveraging Flecs modules)
-2. Project Management
-3. Integration testing
-4. Performance optimization
-5. User experience refinement
 
 ## Benefits
 
 - **Clear Separation of Concerns**: Domain logic separated from technical services
-- **High Performance**: Leverages the optimized Flecs ECS core.
-- **Flexible Event Handling**: Priorities and filtering for better control
+- **High Performance**: Leverages the optimized Flecs ECS core and libuv event loop
+- **Asynchronous I/O**: Non-blocking file operations via libuv
+- **Cross-Platform Event Handling**: Consistent behavior across operating systems
 - **State-Based Input**: Clear transitions between editor modes
 - **Configurable Rendering**: Layer-based approach for extensibility
 - **Memory Optimization**: Context-based allocation for better resource management
 - **Plugin Architecture**: Designed for extension from the start
-- **Leverages Mature ECS**: Benefits from Flecs' features, stability, and community support.
+- **Leverages Mature Libraries**: Benefits from Flecs and libuv features, stability, and community support
+
+## Physics Integration
+
+The physics system is integrated with the ECS architecture:
+
+```
+┌─────────────────────────────┐
+│      Physics System         │
+├─────────────────────────────┤
+│ 1. JoltPhysics Integration  │
+│ 2. Collision Detection      │
+│ 3. Physics Step System      │
+│ 4. Body Management          │
+│ 5. Force Application        │
+└───────────────┬─────────────┘
+                │
+                ▼
+┌─────────────────────────────┐
+│      ECS (Flecs)            │
+├─────────────────────────────┤
+│ - PhysicsComponent          │
+│ - TransformComponent        │
+│ - PhantomComponent          │
+└───────────────┬─────────────┘
+                │
+                ▼
+┌─────────────────────────────┐
+│      Rendering System       │
+└─────────────────────────────┘
+```
+
+### Physics Workflow
+
+1. **Initialization**:
+   - Initialize JoltPhysics with `JPH_Init()`
+   - Set up trace and assertion handlers
+   - Create JobSystem for multithreaded physics
+   - Configure collision system with layers
+
+2. **Body Creation**:
+   - Create shapes for phantoms (typically box shapes)
+   - Set up body creation settings (mass, motion type)
+   - Add bodies to physics system
+
+3. **Simulation**:
+   - Step physics world in fixed time steps
+   - Synchronize ECS transform components with physics bodies
+   - Handle collision events via callbacks
+
+4. **Interaction**:
+   - Apply forces/impulses for user interaction
+   - Update motion states based on editor commands
+   - Handle constraints for special behaviors
 
 ## Tech Stack
 
-| Layer          | Technology          |
-|----------------|---------------------|
-| Core           | C11, Flecs          |
-| Math           | Raymath             |
-| Rendering      | Raylib              |
-| Windowing      | Raylib              |
-| Build System   | CMake               |
-| Testing        | Unity               |
+| Layer          | Technology                |
+|----------------|---------------------------|
+| Core           | C11, Flecs, libuv         |
+| Physics        | JoltPhysics (JoltC)       |
+| Math           | Raymath                   |
+| Rendering      | Raylib                    |
+| Windowing      | Raylib                    |
+| Build System   | CMake                     |
+| Testing        | Unity                     |
+
