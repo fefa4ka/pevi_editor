@@ -2,22 +2,22 @@
 
 ## Overview
 
-Pevi is a 3D code editor built with a layered architecture that emphasizes modularity, performance, and extensibility. The architecture is designed to support the unique requirements of a physics-enabled 3D editing environment while maintaining clean separation of concerns.
+Pevi is a 3D code editor built with a simplified architecture that emphasizes modularity and usability. The architecture is designed to support spatial code organization while maintaining clean separation of concerns.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Application Layer                          │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Application Lifecycle   • System Coordination                 │
-│ • Plugin Management       • Configuration Management            │
+│ • Configuration Management                                      │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────────────┐
 │                         Core Layer                              │
 ├─────────────────────────────────────────────────────────────────┤
-│ • ECS Framework (Flecs)   • Event System (libuv)                │
+│ • Component Framework     • Event System                        │
 │ • Memory Management       • Error Handling                      │
-│ • Physics Engine (JoltC)  • Threading & Concurrency             │
+│ • Spatial Management      • Basic Threading                     │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
             ┌───────────────────┴───────────────────┐
@@ -35,16 +35,15 @@ Pevi is a 3D code editor built with a layered architecture that emphasizes modul
 
 ## Core Systems
 
-### Entity Component System (ECS) - Flecs
+### Component Architecture
 
-Pevi uses the **Flecs** library (https://github.com/SanderMertens/flecs) as its core architectural pattern, providing a data-oriented approach to managing game entities and systems.
+Pevi uses a component-based architecture for managing editor entities and systems.
 
 **Key Benefits:**
-* **Data-Oriented Design:** Components are organized for optimal cache efficiency
-* **Declarative Logic:** Systems operate on component queries rather than object hierarchies
-* **Flexible Composition:** Entities can be composed of multiple components at runtime
-* **Reactive Systems:** Event-based triggers for component changes
-* **Built-in Reflection:** Type information available at runtime
+* **Modular Design:** Components can be added or removed as needed
+* **Separation of Concerns:** Each component handles a specific aspect of functionality
+* **Maintainable Code:** Easier to understand and modify individual components
+* **Testability:** Components can be tested in isolation
 
 **Core Components:**
 ```c
@@ -72,44 +71,38 @@ typedef struct {
     struct lr_cell* needle;   // Current position reference
 } CursorComponent;
 
-// Physics components
+// Spatial components
 typedef struct {
-    JPH_Body* body;           // JoltPhysics body
-    JPH_Shape* shape;         // Collision shape
-    JPH_BodyID body_id;       // Body identifier
-    JPH_MotionType motion_type; // Static, dynamic, or kinematic
-    float mass;               // Mass of the physics body
-    float restitution;        // Bounciness factor
-    float friction;           // Surface friction
-} PhysicsComponent;
+    bool is_selected;         // Whether phantom is currently selected
+    bool is_visible;          // Whether phantom is currently visible
+    Vector3 target_position;  // Position phantom should move toward
+} SpatialComponent;
 ```
 
-### Physics Engine - JoltPhysics
+### Spatial Management
 
-Pevi integrates the **JoltPhysics** engine via its C API (JoltC) to provide realistic physics simulation for the 3D editor environment.
+Pevi provides a simplified spatial management system for organizing code in 3D space.
 
-**Physics Capabilities:**
-* **Physical Interaction:** Phantoms can be grabbed, thrown, and manipulated
-* **Collision Detection:** Prevents phantoms from intersecting each other
-* **Spatial Organization:** Physics-based arrangement of code elements
-* **Dynamic Behavior:** Natural movement and positioning of UI elements
+**Spatial Capabilities:**
+* **Positioning:** Phantoms can be placed at specific 3D coordinates
+* **Selection:** Users can select and move phantoms
+* **Grouping:** Related phantoms can be positioned near each other
+* **Visibility Control:** Phantoms can be shown or hidden based on context
 
-**Integration Details:**
-* Physics bodies are created for each phantom with appropriate collision shapes
-* Physics simulation runs in a dedicated thread via the JoltPhysics JobSystem
-* Two collision layers separate static and dynamic elements
-* Transform components are synchronized with physics bodies each frame
+**Implementation Details:**
+* Simple interpolation for smooth movement between positions
+* Basic collision detection to prevent complete overlap
+* Spatial queries to find phantoms in specific regions
 
-### Event System - libuv
+### Event System
 
-Pevi uses the **libuv** library (https://github.com/libuv/libuv) for event handling and asynchronous I/O operations.
+Pevi uses a simple event system for handling user interactions and system events.
 
 **Event System Features:**
-* **Non-blocking I/O:** Asynchronous file operations prevent UI freezing
-* **Event Loop:** Centralized event processing with callbacks
+* **Event Dispatching:** Central event queue for processing user actions
+* **Event Handlers:** Components register for events they need to process
 * **Cross-platform:** Consistent behavior across operating systems
-* **Timer Management:** Precise scheduling of recurring operations
-* **Signal Handling:** Clean response to system signals
+* **Simple API:** Easy to understand and use
 
 
 ## Domain Layer
@@ -154,105 +147,48 @@ The Services Layer provides technical capabilities that support the domain logic
 
 Built on Raylib, the rendering system visualizes the 3D editor environment:
 
-* **3D Scene Graph:** Manages the spatial organization of visual elements
-* **SDF Font Rendering:** High-quality text rendering with custom shaders
-* **Camera Management:** Multiple camera modes with smooth transitions
-* **Shader Pipeline:** Custom shaders for text, effects, and UI
+* **3D Rendering:** Manages the spatial organization of visual elements
+* **Font Rendering:** Clear text rendering for code display
+* **Camera Management:** Simple camera controls for navigation
+* **Basic Shaders:** Essential shaders for text rendering
 * **Billboarding:** Camera-relative orientation of phantoms
 
 ### Input System
 
-Manages all user input with context-sensitive handling:
+Manages user input with simplified handling:
 
-* **Mode-Based Input:** Different input handling based on editor mode
-* **Key Mapping:** Configurable keyboard shortcuts
-* **Mouse Interaction:** 3D picking and interaction with phantoms
-* **Input Context Stack:** Push/pop contexts for modal operations
-* **Gesture Recognition:** Support for trackpad gestures
+* **Mode-Based Input:** Basic input handling for navigation and editing
+* **Key Handling:** Essential keyboard shortcuts
+* **Mouse Interaction:** 3D selection and movement of phantoms
+* **Context Switching:** Simple mode switching between navigation and editing
 
 ## Data Flow
 
-The data flows through the system in well-defined patterns:
+The data flows through the system in streamlined patterns:
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌───────────────┐     ┌─────────────┐
-│  User Input │────▶│ Input System│────▶│ State Machine │────▶│ libuv Event │
-└─────────────┘     └─────────────┘     └───────────────┘     └──────┬──────┘
-                                                                     │
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌────────▼─────┐
-│   Display   │◀────│  Renderer   │◀────│ ECS Systems │◀────│ Domain Logic │
-└─────────────┘     └─────────────┘     └─────────────┘     └──────────────┘
+┌─────────────┐     ┌─────────────┐     ┌───────────────┐
+│  User Input │────▶│ Input System│────▶│ Event System  │
+└─────────────┘     └─────────────┘     └──────┬────────┘
+                                               │
+┌─────────────┐     ┌─────────────┐     ┌──────▼────────┐
+│   Display   │◀────│  Renderer   │◀────│ Domain Logic  │
+└─────────────┘     └─────────────┘     └───────────────┘
 ```
 
 Key data flows include:
 
-1. **Input Processing:** Input → State Machine → Event Loop → Domain Systems
-2. **File Operations:** File I/O → Async Operations → Buffer System → Phantoms
-3. **Rendering Pipeline:** ECS Components → Rendering Systems → Display
+1. **Input Processing:** Input → Event System → Domain Systems
+2. **File Operations:** File I/O → Buffer System → Phantoms
+3. **Rendering Pipeline:** Components → Rendering Systems → Display
 4. **Command Execution:** Command → Event → System Updates
-5. **Physics Simulation:** Physics Step → Body Updates → Transform Components
-
-## Physics Integration
-
-The physics system is tightly integrated with the ECS architecture:
-
-```
-┌─────────────────────────────┐
-│      Physics System         │
-├─────────────────────────────┤
-│ • JoltPhysics Integration   │
-│ • Collision Detection       │
-│ • Physics Step System       │
-│ • Body Management           │
-│ • Force Application         │
-└───────────────┬─────────────┘
-                │
-                ▼
-┌─────────────────────────────┐
-│      ECS (Flecs)            │
-├─────────────────────────────┤
-│ • PhysicsComponent          │
-│ • TransformComponent        │
-│ • PhantomComponent          │
-└───────────────┬─────────────┘
-                │
-                ▼
-┌─────────────────────────────┐
-│      Rendering System       │
-└─────────────────────────────┘
-```
-
-### Physics Workflow
-
-1. **Initialization:**
-   - Initialize JoltPhysics with appropriate configuration
-   - Set up trace and assertion handlers
-   - Create JobSystem for multithreaded physics
-   - Configure collision system with layers
-
-2. **Body Creation:**
-   - Create shapes for phantoms (typically box shapes)
-   - Set up body creation settings (mass, motion type)
-   - Add bodies to physics system
-
-3. **Simulation:**
-   - Step physics world in fixed time steps
-   - Synchronize ECS transform components with physics bodies
-   - Handle collision events via callbacks
-
-4. **Interaction:**
-   - Apply forces/impulses for user interaction
-   - Update motion states based on editor commands
-   - Handle constraints for special behaviors
+5. **Spatial Management:** Position Updates → Transform Components
 
 ## Technology Stack
 
 | Layer          | Technology                | Purpose                                |
 |----------------|---------------------------|----------------------------------------|
 | Core           | C11                       | Programming language                   |
-|                | Flecs                     | Entity Component System                |
-|                | libuv                     | Event loop and async I/O               |
-| Physics        | JoltPhysics (JoltC)       | Physics simulation                     |
 | Graphics       | Raylib                    | Rendering, windowing, input            |
 | Math           | Raymath                   | Vector/matrix operations               |
 | Build System   | CMake                     | Cross-platform build configuration     |

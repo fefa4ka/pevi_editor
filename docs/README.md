@@ -1,66 +1,61 @@
-# Pevi - 3D Physics-Enabled Code Editor
+# Pevi - 3D Spatial Code Editor
 
-Pevi is an innovative code editor that operates in 3D space with realistic physics. Unlike traditional text editors confined to 2D windows, Pevi allows code to be visualized and manipulated in a three-dimensional environment where code blocks behave like physical objects.
+Pevi is an innovative code editor that operates in 3D space. Unlike traditional text editors confined to 2D windows, Pevi allows code to be visualized and manipulated in a three-dimensional environment where code blocks can be spatially arranged to represent relationships.
 
 ## Core Concept
 
-Pevi reimagines code editing by representing code as "phantoms" - physical objects that float in 3D space. These phantoms can be:
+Pevi reimagines code editing by representing code as "phantoms" - objects that float in 3D space. These phantoms can be:
 
-- Grabbed, moved, and arranged spatially
+- Positioned and arranged spatially
 - Organized to visualize relationships between code components
-- Manipulated with realistic physics (throw, stack, collide)
+- Moved and grouped to create meaningful layouts
 - Edited with familiar text editing capabilities
 
 This spatial approach to code editing provides a unique perspective that can enhance understanding of complex codebases and create more intuitive mental models of code structure.
 
 ## Key Features
 
-- **Physics-Enabled Environment**: Code phantoms with realistic physics behavior
-- **3D Workspace**: Navigate through your code in a fully 3D environment
-- **Spatial Organization**: Arrange code spatially to visualize relationships
+- **Spatial Organization**: Arrange code in 3D to visualize relationships
+- **3D Workspace**: Navigate through your code in a three-dimensional environment
 - **Chunk-Based Editing**: Different phantoms represent different sections of files
-- **Multi-Modal Interaction**: Seamlessly switch between navigation, editing, and command modes
+- **Simplified Interaction**: Intuitive controls for navigation and editing
 - **Modern Text Engine**: UTF-8 support with efficient buffer management
-- **Command System**: Powerful command interface with history and arguments
-- **Entity-Component Architecture**: Flexible and extensible design
+- **Essential Commands**: Streamlined command interface for core operations
+- **Modular Architecture**: Clean separation of concerns for maintainability
 
 ## Current Implementation Status
 
 ### Working Features
 
-- **Physics Integration**:
-  - JoltPhysics-powered phantom interaction
-  - Realistic collision detection between phantoms
-  - Physics-driven movement and positioning
+- **Spatial Interaction**:
+  - Intuitive phantom positioning
+  - Simple movement and arrangement
   - Drag-and-drop phantom repositioning
 
 - **Editor Core**:
   - 3D workspace with floating code phantoms
   - Multiple phantom management (cycle with N/P keys)
-  - Camera controls with multiple modes (free, edit, command)
-  - SDF font rendering with custom shaders
-  - Linked ring text buffers for efficient editing
+  - Simplified camera controls
+  - Text rendering with clear fonts
+  - Efficient text buffers for editing
 
 - **User Interface**:
-  - Command system with history and arguments (:e <file>, :q)
-  - Context-aware input handling with multiple modes
+  - Essential commands (:e <file>, :q)
+  - Streamlined input handling
   - UTF-8 text editing with proper cursor management
 
 - **System Architecture**:
-  - ECS (Entity-Component-System) architecture
-  - Event system for inter-component communication
-  - Memory tracking and leak detection system
-  - Error handling system with contextual logging
+  - Clean component architecture
+  - Event system for communication
+  - Memory management
+  - Error handling with logging
 
 ### Interaction Controls
 
-- **Navigation Mode** (Free):
+- **Navigation Mode**:
   - WASD/Arrow keys: Move camera
   - Mouse: Look around
-  - Shift: Enable mouse look
-  - G: Grab/Release phantom (physics-enabled)
-  - F: Apply force to phantom in view direction
-  - R: Reset physics state of current phantom
+  - G: Grab/move phantom
   - N/P: Cycle between phantoms
   - I: Enter edit mode on current phantom
   - :: Enter command mode
@@ -82,18 +77,12 @@ This spatial approach to code editing provides a unique perspective that can enh
 ### Planned Features
 
 - **Visualization**:
-  - Syntax highlighting shaders
+  - Syntax highlighting
   - Code structure visualization
   - Relationship visualization between phantoms
 
 - **Integration**:
   - Project workspace management
   - File browser integration
-  - Version control visualization
-
-- **Extensibility**:
-  - Plugin system architecture
-  - Multi-window support
-  - Collaborative editing features
 
 
