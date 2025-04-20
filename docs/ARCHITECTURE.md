@@ -115,8 +115,7 @@ The Text Engine manages the representation and manipulation of text content:
 
 * **Buffer System:** Efficient storage and manipulation of text using linked ring buffers
 * **UTF-8 Support:** Full Unicode text handling with proper character boundaries
-* **Undo/Redo:** Multi-level operation history with transaction support
-* **Syntax Analysis:** Lexical analysis for syntax highlighting
+* **Basic Undo/Redo:** Simple operation history
 * **Text Measurement:** Character and line metrics for rendering
 
 ### Phantom System
@@ -126,18 +125,16 @@ Phantoms are the 3D representations of code in the editor space:
 * **Content Management:** Maps buffers to visual representations
 * **Layout Engine:** Determines text layout within phantoms
 * **Lifecycle Management:** Creation, updating, and destruction of phantoms
-* **Selection Model:** Text selection within and across phantoms
+* **Selection Model:** Text selection within phantoms
 * **Visibility Control:** Show/hide and focus management
 
 ### Command System
 
-The Command System processes user commands and editor operations:
+The Command System processes essential user commands:
 
-* **Command Parser:** Interprets command syntax (:e, :q, etc.)
-* **Command History:** Tracks and allows recall of previous commands
-* **Argument Processing:** Handles command arguments and validation
+* **Command Parser:** Interprets basic command syntax (:e, :q, etc.)
 * **Command Execution:** Routes commands to appropriate subsystems
-* **Macro Support:** Recording and playback of command sequences
+* **Simple Validation:** Basic argument validation
 
 ## Services Layer
 
