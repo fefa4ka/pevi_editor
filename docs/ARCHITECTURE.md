@@ -175,13 +175,13 @@ Manages all user input with context-sensitive handling:
 The data flows through the system in well-defined patterns:
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  User Input │────▶│ Input System│────▶│ State Machine│────▶│ libuv Event │
-└─────────────┘     └─────────────┘     └─────────────┘     └──────┬──────┘
-                                                                   │
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌──────▼──────┐
-│   Display   │◀────│  Renderer   │◀────│ ECS Systems │◀────│ Domain Logic│
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌─────────────┐     ┌───────────────┐     ┌─────────────┐
+│  User Input │────▶│ Input System│────▶│ State Machine │────▶│ libuv Event │
+└─────────────┘     └─────────────┘     └───────────────┘     └──────┬──────┘
+                                                                     │
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌────────▼─────┐
+│   Display   │◀────│  Renderer   │◀────│ ECS Systems │◀────│ Domain Logic │
+└─────────────┘     └─────────────┘     └─────────────┘     └──────────────┘
 ```
 
 Key data flows include:
@@ -257,5 +257,4 @@ The physics system is tightly integrated with the ECS architecture:
 | Math           | Raymath                   | Vector/matrix operations               |
 | Build System   | CMake                     | Cross-platform build configuration     |
 | Testing        | Unity                     | Unit testing framework                 |
-| Version Control| Git                       | Source code management                 |
 
