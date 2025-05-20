@@ -23,10 +23,6 @@ This spatial approach to code editing provides a unique perspective that can enh
 - **Essential Commands**: Streamlined command interface for core operations
 - **Modular Architecture**: Clean separation of concerns for maintainability
 
-## Current Implementation Status
-
-### Working Features
-
 - **Spatial Interaction**:
   - Intuitive phantom positioning
   - Simple movement and arrangement
@@ -50,8 +46,6 @@ This spatial approach to code editing provides a unique perspective that can enh
   - Memory management
   - Error handling with logging
 
-### Interaction Controls
-
 - **Navigation Mode**:
   - WASD/Arrow keys: Move camera
   - Mouse: Look around
@@ -73,8 +67,6 @@ This spatial approach to code editing provides a unique perspective that can enh
   - :q - Quit application
   - :new - Create new phantom
   - :d - Delete current phantom
-
-### Planned Features
 
 - **Visualization**:
   - Syntax highlighting
