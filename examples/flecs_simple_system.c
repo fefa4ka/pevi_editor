@@ -32,7 +32,7 @@ int main(void) {
     ECS_COMPONENT(world, Velocity);
 
     // Register system
-    ECS_SYSTEM(world, MoveSystem, EcsOnUpdate, Position, [in] Velocity);
+    ECS_SYSTEM(world, MoveSystem, EcsOnUpdate, Position, Velocity);
 
     // Create an entity with Position and Velocity
     ecs_entity_t e1 = ecs_new(world);
