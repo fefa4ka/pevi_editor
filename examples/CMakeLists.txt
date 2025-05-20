@@ -15,6 +15,10 @@ target_link_libraries(flecs_hierarchy_example PRIVATE flecs::flecs_static)
 add_executable(flecs_basic_entity_component flecs_basic_entity_component.c)
 target_link_libraries(flecs_basic_entity_component PRIVATE flecs::flecs_static)
 
+# Build the flecs simple system example
+add_executable(flecs_simple_system flecs_simple_system.c)
+target_link_libraries(flecs_simple_system PRIVATE flecs::flecs_static)
+
 # Build the joltc physics example
 add_executable(joltc_example joltc.c)
 target_link_libraries(joltc_example PRIVATE 
@@ -29,11 +33,11 @@ target_link_libraries(libuv_example PRIVATE
 )
 
 # Set common properties for examples
-set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component PROPERTIES
+set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_simple_system PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
 )
 
 # Add install targets
-install(TARGETS raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component
+install(TARGETS raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_simple_system
     DESTINATION bin/examples
 )
