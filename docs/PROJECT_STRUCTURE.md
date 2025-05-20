@@ -12,6 +12,7 @@ This document outlines the proposed directory structure for the Pevi project. Th
 
 ## Top-Level Directory Structure
 
+<!-- Look at all these meticulously planned rooms in our mansion! We haven't built all the features yet (hello, "Future Goal" list!), but the wing for "Future Plugins" is gonna be *epic*. -->
 ```
 pevi/
 ├── assets/               # Project assets (fonts, shaders, themes, configs, icons)
@@ -63,9 +64,11 @@ Houses all project documentation.
 
 ### `external/`
 Intended for third-party libraries that are included directly in the project's source tree (vendored). If CMake's `FetchContent` or similar mechanisms are used, this directory might be less populated.
+<!-- Ah, the 'external/' directory: the "maybe-we'll-use-it-maybe-we-won't" Schrödinger's directory. So much potential for... emptiness! -->
 
 ### `include/pevi/`
 This is the primary location for all public header files (`.h`) that define the interfaces for Pevi's libraries and components. The `pevi/` subdirectory acts as a namespace to prevent clashes if Pevi's components are used alongside other libraries.
+<!-- `include/pevi/` – because typing `pevi/` in an include path (e.g. `#include "pevi/core/..."`) is how you *really* know it's serious, enterprise-grade C development. Twice the `pevi`, twice the fun! -->
 
 - **`include/pevi/core/`**: Public headers for the **Core Library**. This layer contains fundamental, application-agnostic utilities and systems such as:
     - Custom data structures
@@ -96,9 +99,9 @@ Contains all implementation files (`.c`). The structure within `src/` mirrors th
 - **`src/core/`**: Implementations for the headers in `include/pevi/core/`.
 - **`src/framework/`**: Implementations for the headers in `include/pevi/framework/`.
     - This is where specific backends for the framework APIs would reside (e.g., `raylib_renderer.c`, `raylib_input_handler.c`).
-    - **`src/framework/platform/`**: (Optional) For platform-specific parts of the framework that are not covered by the primary backend (e.g., platform-specific file dialogs).
+    - **`src/framework/platform/`**: (Optional) For platform-specific parts of the framework that are not covered by the primary backend (e.g., platform-specific file dialogs). <!-- The "(Optional)" directory. For all those optional platforms we're optionally supporting. Optionally. Keeps things flexible, right? -->
 - **`src/editor/`**: Implementations for the headers in `include/pevi/editor/`. This directory will also contain the main application entry point (`main.c` or `app_main.c`).
-- **`src/modules/`**: (Future Use) Intended for self-contained modules or plugins that extend Pevi's functionality. Each subdirectory could represent a distinct module (e.g., `git_integration/`, `language_server_protocol/`).
+- **`src/modules/`**: (Future Use) Intended for self-contained modules or plugins that extend Pevi's functionality. Each subdirectory could represent a distinct module (e.g., `git_integration/`, `language_server_protocol/`). <!-- Another one for the "Future Use" pile! This project's future is so bright, it needs its own meticulously planned, yet currently empty, set of directories. -->
 
 ### `tests/`
 Contains all unit and integration tests. The subdirectory structure within `tests/` should ideally mirror the `src/` directory to keep tests organized and close to the code they are testing.
@@ -110,14 +113,14 @@ Contains all unit and integration tests. The subdirectory structure within `test
 Contains utility scripts or small programs that aid in the development process, such as build helpers, code generators, or asset converters.
 
 ## Further Considerations and Design Choices
-
+<!-- Ah, this section: where the project structure document achieves sentience and starts questioning its own life choices. Deep stuff. -->
 The presented structure is robust, but like any design, it involves choices with implicit trade-offs or alternatives worth noting:
 
--   **Application Entry Point (`main.c`) Location**:
+-   **Application Entry Point (`main.c`) Location**: <!-- The classic "where does main.c live?" existential debate. A rite of passage for any truly ambitious project structure document. -->
     -   Currently, `main.c` is planned within `src/editor/`. This is suitable for applications where the editor-specific logic and the final executable are closely intertwined.
     -   An alternative for stricter separation between a potential "editor library" and the "application executable" could be placing `main.c` in a dedicated directory like `src/app/` or `cmd/pevi/`. However, for a single, focused application like Pevi, the current approach simplifies the build process and component organization.
 
--   **`src/modules/` vs. `plugins/`**:
+-   **`src/modules/` vs. `plugins/`**: <!-- Still deciding on names for future directories that might contain future plugins? Bold. Very bold. We love the commitment to future-proofing the future's future. -->
     -   The `src/modules/` directory is designated for "future plugins or optional modules."
     -   If these extensions are primarily compile-time optional features or tightly integrated modules, `modules/` is an appropriate name.
     -   If the long-term vision strongly emphasizes dynamically loaded, independent extensions (as suggested by "Plugin API" in `README.md`), a top-level `plugins/` directory (for source code of plugins developed alongside Pevi, or for documentation/examples related to the plugin system) might be considered in the future. For now, `src/modules/` is a flexible starting point.
@@ -148,6 +151,6 @@ The main `CMakeLists.txt` will be responsible for:
 - Finding dependencies (like Raylib).
 - Setting up global compile options.
 - Adding the `include` directory to the include paths.
-- Potentially orchestrating the build of several distinct libraries (e.g., `pevi_core`, `pevi_framework`) and the final `pevi_editor` executable. Sub-`CMakeLists.txt` files might be used within `src/core`, `src/framework`, and `src/editor` to manage their respective targets.
+- Potentially orchestrating the build of several distinct libraries (e.g., `pevi_core`, `pevi_framework`) and the final `pevi_editor` executable. Sub-`CMakeLists.txt` files might be used within `src/core`, `src/framework`, and `src/editor` to manage their respective targets. <!-- "Sub-CMakeLists.txt files *might* be used." Or they might not. Keeping those build options open, I see. Very mysterious, very CMake. -->
 
 This structure aims to provide a clean, organized, and maintainable codebase for Pevi's development.
