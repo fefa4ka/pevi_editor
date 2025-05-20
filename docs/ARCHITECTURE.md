@@ -45,40 +45,6 @@ Pevi uses a component-based architecture for managing editor entities and system
 * **Maintainable Code:** Easier to understand and modify individual components
 * **Testability:** Components can be tested in isolation
 
-**Core Components:**
-```c
-// Transform components
-typedef struct {
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale;
-} TransformComponent;
-
-// Phantom (code display) components
-typedef struct {
-    BufferId buffer_id;  // Reference to text buffer
-    size_t line_from;    // Starting line to display
-    size_t line_to;      // Ending line to display
-    FontSettings font;   // Font configuration
-    Color color;         // Text color
-} PhantomComponent;
-
-// Cursor components
-typedef struct {
-    size_t line_no;           // Current line number
-    size_t pos;               // Position in line
-    struct lr_cell* owner;    // Buffer cell reference
-    struct lr_cell* needle;   // Current position reference
-} CursorComponent;
-
-// Spatial components
-typedef struct {
-    bool is_selected;         // Whether phantom is currently selected
-    bool is_visible;          // Whether phantom is currently visible
-    Vector3 target_position;  // Position phantom should move toward
-} SpatialComponent;
-```
-
 ### Spatial Management
 
 Pevi provides a simplified spatial management system for organizing code in 3D space.
@@ -189,5 +155,5 @@ Key data flows include:
 | Graphics       | Raylib                    | Rendering, windowing, input            |
 | Math           | Raymath                   | Vector/matrix operations               |
 | Build System   | CMake                     | Cross-platform build configuration     |
-| Testing        | Unity                     | Unit testing framework                 |
+| Testing        |                           | Unit testing framework                 |
 
