@@ -130,22 +130,45 @@ Handles user input through a simplified, mode-based system:
 Data flow within Pevi follows streamlined patterns to ensure efficient processing and clear separation of concerns:
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌───────────────┐
-│  User Input │────▶│ Input System│────▶│ Event System  │
-└─────────────┘     └─────────────┘     └──────┬────────┘
-                                               │
-┌─────────────┐     ┌─────────────┐     ┌──────▼────────┐
-│   Display   │◀────│  Renderer   │◀────│ Domain Logic  │
-└─────────────┘     └─────────────┘     └───────────────┘
+┌─────────────┐       ┌──────────────────┐       ┌──────────────────┐
+│ User Input  │──────▶│   Input System   │──────▶│   Event Bus      │
+└─────────────┘       │ (Raw to Abstract │       │ (Input Events,   │
+                      │  Input Events)   │       │  Command Events) │
+                      └──────────────────┘       └────────┬─────────┘
+                                                          │
+                                                          │ (Events)
+                                                          ▼
+                        ┌───────────────────────────────────────────────────┐
+                        │ Event Handlers / Logic Systems (Domain Layer)     │
+                        │ ------------------------------------------------- │
+                        │ * Process events (from Event Bus)                 │
+                        │ * Interact with Services (e.g., File I/O)         │
+                        │ * MUTATE STATE (primarily in Components)          │
+                        └──────────────────┬─────────────────┬──────────────┘
+                                           │                 │
+(Services used by Logic)                   │ (State Access)  │ (State Access)
+┌───────────┐                              │                 │
+│ File I/O  │◀─────────────────────────────┘                 │
+└───────────┘                                                │
+                                                             │
+                                                             ▼
+                                          ┌──────────────────────────────────┐
+                                          │ Entities & Components (The State)│
+                                          │ -------------------------------- │
+                                          │ - Phantoms (as Entities)         │
+                                          │ - Camera State                   │
+                                          └─────────────────┬────────────────┘
+                                                            │
+                                                            │ (Read State for Rendering)
+                                                            ▼
+┌─────────────┐       ┌───────────────────────────────────────────────────┐
+│  Display    │◀──────│ Rendering Systems (Service Layer, using Raylib)   │
+└─────────────┘       │ ------------------------------------------------- │
+                      │ * Read Components                                 │
+                      └───────────────────────────────────────────────────┘
 ```
 
-Key data flows include:
 
-1. **Input Processing:** Input → Event System → Domain Systems
-2. **File Operations:** File I/O → Buffer System → Phantoms
-3. **Rendering Pipeline:** Components → Rendering Systems → Display
-4. **Command Execution:** Command → Event → System Updates
-5. **Spatial Management:** Position Updates → Transform Components
 
 ## Technology Stack
 
