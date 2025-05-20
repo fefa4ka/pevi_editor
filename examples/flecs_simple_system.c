@@ -23,7 +23,13 @@ void MoveSystem(ecs_iter_t *it) {
     }
 
     Position *p = ecs_field(it, Position, 1);
-    const Velocity *v = ecs_field(it, Velocity, 2); // This is the likely crash line if field_count is 1
+    // Add diagnostic print immediately before accessing Velocity
+    printf("MoveSystem: Accessed Position. Before Velocity access, it->field_count = %d\n", it->field_count);
+    fflush(stdout);
+    const Velocity *v = ecs_field(it, Velocity, 2); // This is the likely crash line
+    // Add diagnostic print immediately after accessing Velocity (if it doesn't crash)
+    printf("MoveSystem: Accessed Velocity successfully.\n");
+    fflush(stdout);
 
     for (int i = 0; i < it->count; i ++) {
         p[i].x += v[i].dx * it->delta_time;
