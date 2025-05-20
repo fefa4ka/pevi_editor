@@ -2,7 +2,7 @@
 
 ## Overview
 
-Pevi is a 3D code editor built with a simplified architecture that emphasizes modularity and usability. The architecture is designed to support spatial code organization while maintaining clean separation of concerns.
+Pevi is a 3D code editor. Its architecture is designed for modularity and usability, supporting spatial code organization with a clear separation of concerns.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -67,7 +67,7 @@ Pevi uses a simple event system for handling user interactions and system events
 **Event System Features:**
 * **Event Dispatching:** Central event queue for processing user actions
 * **Event Handlers:** Components register for events they need to process
-* **Cross-platform:** Consistent behavior across operating systems
+* **Cross-platform:** Aims for consistent event processing behavior across supported operating systems.
 * **Simple API:** Easy to understand and use
 
 
@@ -118,7 +118,7 @@ Built on Raylib, the rendering system visualizes the 3D editor environment:
 
 ### Input System
 
-Manages user input with simplified handling:
+Handles user input through a simplified, mode-based system:
 
 * **Mode-Based Input:** Basic input handling for navigation and editing
 * **Key Handling:** Essential keyboard shortcuts
@@ -127,7 +127,7 @@ Manages user input with simplified handling:
 
 ## Data Flow
 
-The data flows through the system in streamlined patterns:
+Data flow within Pevi follows streamlined patterns to ensure efficient processing and clear separation of concerns:
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌───────────────┐
