@@ -8,6 +8,9 @@ target_link_libraries(raylib_example PRIVATE raylib glfw)
 add_executable(flecs_example flecs.c)
 target_link_libraries(flecs_example PRIVATE flecs::flecs_static)
 
+add_executable(flecs_hierarchy_example flecs_hierarchy.c)
+target_link_libraries(flecs_hierarchy_example PRIVATE flecs::flecs_static)
+
 # Build the joltc physics example
 add_executable(joltc_example joltc.c)
 target_link_libraries(joltc_example PRIVATE 
