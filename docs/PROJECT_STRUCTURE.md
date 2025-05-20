@@ -109,6 +109,27 @@ Contains all unit and integration tests. The subdirectory structure within `test
 ### `tools/`
 Contains utility scripts or small programs that aid in the development process, such as build helpers, code generators, or asset converters.
 
+## Further Considerations and Design Choices
+
+The presented structure is robust, but like any design, it involves choices with implicit trade-offs or alternatives worth noting:
+
+-   **Application Entry Point (`main.c`) Location**:
+    -   Currently, `main.c` is planned within `src/editor/`. This is suitable for applications where the editor-specific logic and the final executable are closely intertwined.
+    -   An alternative for stricter separation between a potential "editor library" and the "application executable" could be placing `main.c` in a dedicated directory like `src/app/` or `cmd/pevi/`. However, for a single, focused application like Pevi, the current approach simplifies the build process and component organization.
+
+-   **`src/modules/` vs. `plugins/`**:
+    -   The `src/modules/` directory is designated for "future plugins or optional modules."
+    -   If these extensions are primarily compile-time optional features or tightly integrated modules, `modules/` is an appropriate name.
+    -   If the long-term vision strongly emphasizes dynamically loaded, independent extensions (as suggested by "Plugin API" in `README.md`), a top-level `plugins/` directory (for source code of plugins developed alongside Pevi, or for documentation/examples related to the plugin system) might be considered in the future. For now, `src/modules/` is a flexible starting point.
+
+-   **Public API Headers (`include/pevi/`)**:
+    -   The `include/pevi/` structure (e.g., `include/pevi/core/`, `include/pevi/framework/`) is a strong choice. It namespaces Pevi's headers, preventing potential name collisions if Pevi's libraries were used alongside other codebases or if Pevi itself integrates more third-party libraries directly. This promotes cleaner include directives (e.g., `#include "pevi/core/logging.h"`).
+
+-   **Granularity of Libraries**:
+    -   The structure naturally supports compiling `core` and `framework` into distinct static or shared libraries, with `editor` components forming the final executable. This modularity is beneficial for testing, reuse (if applicable), and managing dependencies.
+
+These considerations highlight that the chosen structure is a well-reasoned outcome of balancing various design goals.
+
 ## Relationship to `ARCHITECTURE.md`
 
 This project structure is designed to directly support the layered architecture described in `docs/ARCHITECTURE.md`:
