@@ -36,7 +36,8 @@ Pevi provides a streamlined interface with distinct modes for different tasks:
 - **Navigation Mode**:
   - `WASD` / `Arrow keys`: Move camera.
   - `Mouse Look`: Control camera orientation.
-  - `Mouse Click`: Select/focus on a phantom.
+  - `Mouse Click` (on a phantom): Select/focus on the phantom.
+  - `Mouse Drag` (on a phantom): Click, hold, and drag to reposition the phantom.
   - `G` (while focused on a phantom): Grab the phantom. Move mouse to reposition, click to release.
   - `N` / `P`: Cycle focus between phantoms.
   - `I`: Enter Edit Mode for the currently focused phantom.
