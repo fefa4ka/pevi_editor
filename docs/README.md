@@ -61,6 +61,10 @@ Pevi provides a streamlined interface with distinct modes for different tasks:
   - `Ctrl+S`: Save the content of the current phantom (if associated with a file).
   - `Ctrl+Q`: Quit the application.
 
+### Extensibility & Scripting
+- **Plugin API**: (Future Goal) Develop a comprehensive API to allow third-party extensions and plugins.
+- **Runtime Scripting**: (Future Goal) Integrate a scripting engine (e.g., Lua, JavaScript) to enable users to customize and extend editor behavior dynamically.
+
 - **Command Mode** (accessed by pressing `:` from Navigation Mode):
   - Access essential editor functions via a simple command line interface.
   - `:e <filepath>`: Open a file into a new phantom. If the file exists, its content is loaded.
@@ -78,6 +82,7 @@ Pevi provides a streamlined interface with distinct modes for different tasks:
 
 ### Project & System
 - **Modular Design**: Built with a clean, modular architecture for maintainability and extensibility. For more details, see [Pevi Editor Architecture](ARCHITECTURE.md).
+- **Extensibility API**: (Future Goal) Core design includes provisions for a robust API to support plugins and runtime scripting.
 - **Workspace Management**: (Future Goal) Manage collections of files and phantoms as projects.
 - **File Browser Integration**: (Future Goal) Navigate and open files from an integrated file browser.
 

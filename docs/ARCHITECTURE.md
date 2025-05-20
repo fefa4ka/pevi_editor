@@ -30,6 +30,7 @@ Pevi is a 3D code editor. Its architecture is designed for modularity and usabil
 │ • Buffer System           │       │ • File I/O                    │
 │ • Command Processor       │       │ • UI System                   │
 │ • Camera System           │       │ • Logging Service             │
+│                           │       │ • Scripting Engine / Ext API  │
 └───────────────────────────┘       └───────────────────────────────┘
 ```
 
@@ -124,6 +125,15 @@ Handles user input through a simplified, mode-based system:
 * **Key Handling:** Essential keyboard shortcuts
 * **Mouse Interaction:** 3D selection and movement of phantoms
 * **Context Switching:** Simple mode switching between navigation and editing
+
+### Scripting Engine / Extension API
+
+(Future Goal) This system will provide the infrastructure for extending Pevi's functionality:
+
+* **Scripting Language Integration:** Embed a scripting engine (e.g., Lua, Wren, or similar lightweight language) to allow users to write scripts that interact with the editor.
+* **Extension API:** Define a clear API that extensions can use to add new features, commands, UI elements, or modify existing behavior.
+* **Lifecycle Management:** Handle the loading, unloading, and execution of scripts and extensions.
+* **Sandboxing:** (Consideration) Provide a secure environment for running untrusted code.
 
 ## Data Flow
 
