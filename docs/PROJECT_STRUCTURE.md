@@ -34,8 +34,8 @@ pevi/
 │   ├── core/             # Implementation of the Core library
 │   ├── editor/           # Implementation of the Editor application (includes main entry point)
 │   ├── framework/        # Implementation of the Framework library (e.g., Raylib renderer backend)
-│   │   └── platform/     # Platform-specific implementations for the framework (optional)
-│   └── modules/          # Future location for plugins or optional modules
+│   │   └── platform/     # Platform-specific implementations for the framework
+│   └── plugins/          # Location for plugins or optional modules
 ├── tests/                # Unit and integration tests
 │   ├── core/
 │   ├── editor/
