@@ -34,27 +34,41 @@ Pevi offers a range of features designed to enhance the coding experience in a 3
 Pevi provides a streamlined interface with distinct modes for different tasks:
 
 - **Navigation Mode**:
-  - `WASD` / `Arrow keys`: Move camera
-  - `Mouse`: Look around
-  - `G`: Grab/move the currently focused phantom
-  - `N` / `P`: Cycle focus between phantoms
-  - `I`: Enter Edit Mode for the current phantom
-  - `:`: Enter Command Mode
+  - `WASD` / `Arrow keys`: Move camera.
+  - `Mouse Look`: Control camera orientation.
+  - `Mouse Click`: Select/focus on a phantom.
+  - `G` (while focused on a phantom): Grab the phantom. Move mouse to reposition, click to release.
+  - `N` / `P`: Cycle focus between phantoms.
+  - `I`: Enter Edit Mode for the currently focused phantom.
+  - `:`: Enter Command Mode.
 
-- **Edit Mode**:
+- **Edit Mode** (when a phantom is focused and 'I' is pressed):
   - Standard text input for inserting code.
   - `Backspace` / `Delete`: Remove characters.
   - `Enter`: Insert a new line.
+  - `Arrow Keys`: Navigate text.
+  - `Mouse Click`: Position cursor.
+  - `Mouse Drag`: Select text.
+  - `Shift + Arrow Keys`: Select text.
+  - `Ctrl+C` / `Cmd+C`: Copy selected text.
+  - `Ctrl+X` / `Cmd+X`: Cut selected text.
+  - `Ctrl+V` / `Cmd+V`: Paste text from clipboard.
+  - `Ctrl+Z` / `Cmd+Z`: Undo last action.
+  - `Ctrl+Y` / `Cmd+Y` (or `Ctrl+Shift+Z` / `Cmd+Shift+Z`): Redo last undone action.
+  - `Mouse Wheel`: Scroll through text within the phantom.
   - `ESC`: Return to Navigation Mode.
   - `Ctrl+S`: Save the content of the current phantom (if associated with a file).
   - `Ctrl+Q`: Quit the application.
 
-- **Command Mode**:
+- **Command Mode** (accessed by pressing `:` from Navigation Mode):
   - Access essential editor functions via a simple command line interface.
-  - `:e <file>`: Open a file in a new phantom.
-  - `:new`: Create a new, empty phantom.
-  - `:d`: Delete the current phantom.
-  - `:q`: Quit the application.
+  - `:e <filepath>`: Open a file into a new phantom. If the file exists, its content is loaded.
+  - `:w` or `:write`: Save the current phantom to its associated file.
+  - `:w <filepath>` or `:saveas <filepath>`: Save the current phantom to the specified filepath and associate it with this file.
+  - `:new`: Create a new, empty phantom (not associated with any file initially).
+  - `:d` or `:delete`: Delete the currently focused phantom.
+  - `:q` or `:quit`: Quit the application.
+  - `ESC`: Return to Navigation Mode.
 
 ### Visualization Capabilities
 - **Syntax Highlighting**: Enhance code readability with language-specific syntax coloring.
