@@ -12,8 +12,18 @@ typedef struct {
 
 // System that moves entities with Position and Velocity
 void MoveSystem(ecs_iter_t *it) {
+    // Diagnostic print to check iterator's field count
+    printf("MoveSystem entered. Entity count: %d, Field count: %d\n", it->count, it->field_count);
+    fflush(stdout); // Ensure this prints before a potential crash
+
+    // Check if field_count is as expected
+    if (it->field_count < 2) {
+        fprintf(stderr, "Error: MoveSystem iterator has field_count %d, expected 2. System signature 'Position, Velocity' might be misinterpreted.\n", it->field_count);
+        // Allow to proceed to see original crash point, this message is for diagnosis.
+    }
+
     Position *p = ecs_field(it, Position, 1);
-    const Velocity *v = ecs_field(it, Velocity, 2);
+    const Velocity *v = ecs_field(it, Velocity, 2); // This is the likely crash line if field_count is 1
 
     for (int i = 0; i < it->count; i ++) {
         p[i].x += v[i].dx * it->delta_time;
