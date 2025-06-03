@@ -159,9 +159,9 @@ int main(void) {
     ECS_TAG_DEFINE(world, EditorTag);
 
     // Register systems
-    ECS_SYSTEM(world, UpdatePhantomPositions, EcsOnUpdate, Position, Phantom, PhantomTag);
-    ECS_SYSTEM(world, UpdateTextBuffers, EcsOnUpdate, TextBuffer, PhantomTag);
-    ECS_SYSTEM(world, UpdateCamera, EcsOnUpdate, Camera, Position, CameraTag);
+    ECS_SYSTEM(world, UpdatePhantomPositions, EcsOnUpdate, Position, Phantom);
+    ECS_SYSTEM(world, UpdateTextBuffers, EcsOnUpdate, TextBuffer);
+    ECS_SYSTEM(world, UpdateCamera, EcsOnUpdate, Camera, Position);
 
     printf("=== Pevi Editor ECS Demo ===\n\n");
 
@@ -200,8 +200,7 @@ int main(void) {
         .terms = {
             { ecs_id(Position) },
             { ecs_id(Phantom) },
-            { ecs_id(TextBuffer) },
-            { PhantomTag }
+            { ecs_id(TextBuffer) }
         }
     });
 
