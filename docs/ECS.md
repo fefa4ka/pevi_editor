@@ -56,6 +56,35 @@ entity.has_tag(Selected)  // returns true
 entity.remove_tag(Selected)
 ```
 
+### Pairs (Relationships)
+Pairs are a powerful ECS concept that allows encoding relationships between entities. A pair consists of two parts: a relationship (first element) and a target/object (second element). This enables modeling complex entity relationships without additional components.
+
+```pseudo
+// Relationship definitions
+relationship ChildOf      // Entity is a child of another entity
+relationship DependsOn    // Entity depends on another entity
+relationship References   // Entity references another entity
+relationship Likes        // For examples - one entity likes another
+
+// Using pairs
+entity.add_pair(ChildOf, parent_entity)
+entity.add_pair(References, file_entity)
+entity.has_pair(ChildOf, parent_entity)  // returns true
+entity.remove_pair(ChildOf, parent_entity)
+
+// The same component can be added multiple times with different targets
+bob.add_pair(Likes, alice)
+bob.add_pair(Likes, coffee)
+bob.has_pair(Likes, alice)   // true
+bob.has_pair(Likes, coffee)  // true
+```
+
+Pairs enable several important patterns:
+- **Hierarchies**: Using ChildOf relationships
+- **Dependencies**: Tracking which entities depend on others
+- **References**: Linking entities to external resources
+- **Graphs**: Building arbitrary relationship graphs between entities
+
 ### Systems
 Systems contain the logic that operates on entities with specific component combinations.
 
@@ -152,21 +181,38 @@ entity Phantom {
 }
 ```
 
-### Relationships
+### Relationships in Pevi
 
-Pevi uses entity relationships to model connections between entities.
+Pevi uses pairs to model various relationships between entities:
 
 ```pseudo
-// Parent-child relationships for grouping
-phantom1.add_relationship(ChildOf, group_entity)
-phantom2.add_relationship(ChildOf, group_entity)
+// Parent-child relationships for grouping phantoms
+phantom1.add_pair(ChildOf, group_entity)
+phantom2.add_pair(ChildOf, group_entity)
 
 // Phantom references a file
-phantom.add_relationship(ReferencesFile, file_entity)
+phantom.add_pair(ReferencesFile, file_entity)
 
 // Camera targets a phantom
-camera.add_relationship(Targeting, phantom)
+camera.add_pair(Targeting, phantom)
+
+// Phantom depends on another phantom (e.g., for imports)
+phantom.add_pair(DependsOn, imported_phantom)
+
+// Multiple phantoms can reference the same file
+phantom1.add_pair(ReferencesFile, main_file)
+phantom2.add_pair(ReferencesFile, main_file)  // Different view of same file
+
+// Query examples with relationships
+query = world.query([Phantom, ChildOf(group_entity)])  // All phantoms in a group
+query = world.query([ReferencesFile(file_entity)])     // All phantoms referencing a file
 ```
+
+Benefits of using pairs for relationships:
+- **Flexible Hierarchies**: Phantoms can be organized in groups and subgroups
+- **Multiple Views**: Multiple phantoms can reference the same file, showing different parts
+- **Dependency Tracking**: Track which phantoms depend on others
+- **Efficient Queries**: Query for all entities with specific relationships
 
 ## System Architecture
 
@@ -327,6 +373,15 @@ query = world.query([Phantom, ChildOf(group_entity)])
 
 // All top-level phantoms (no parent)
 query = world.query([Phantom, !ChildOf(*)])
+
+// All entities that reference a specific file
+query = world.query([ReferencesFile(file_entity)])
+
+// All phantoms that depend on a specific phantom
+query = world.query([Phantom, DependsOn(source_phantom)])
+
+// Complex relationship query - all selected phantoms in a group
+query = world.query([Phantom, Selected, ChildOf(group_entity)])
 ```
 
 ### Singleton Queries
@@ -355,7 +410,7 @@ editor_mode = world.get_singleton(EditorMode)
 ## Example: Creating a New Phantom
 
 ```pseudo
-function create_phantom(world, x, y, z, content) {
+function create_phantom(world, x, y, z, content, parent = null, file = null) {
     // Create entity
     phantom = world.create_entity()
     
@@ -374,8 +429,17 @@ function create_phantom(world, x, y, z, content) {
         length: content.length,
         capacity: content.length * 2,
         is_dirty: false,
-        filepath: null
+        filepath: file ? file.path : null
     })
+    
+    // Add relationships
+    if parent != null {
+        phantom.add_pair(ChildOf, parent)
+    }
+    
+    if file != null {
+        phantom.add_pair(ReferencesFile, file)
+    }
     
     // Add relevant tags
     if content != "" {
@@ -402,6 +466,33 @@ function select_phantom(world, phantom) {
     // Update focus in Phantom component
     phantom_comp = phantom.get(Phantom)
     phantom_comp.is_focused = true
+}
+
+// Example: Creating a phantom group
+function create_phantom_group(world, name, parent = null) {
+    group = world.create_entity(name)
+    
+    // Groups might just have position and a name
+    group.add(Position { x: 0, y: 0, z: 0 })
+    group.add_tag(PhantomGroup)
+    
+    if parent != null {
+        group.add_pair(ChildOf, parent)
+    }
+    
+    return group
+}
+
+// Example: Finding all phantoms in a group
+function get_phantoms_in_group(world, group) {
+    query = world.query([Phantom, ChildOf(group)])
+    phantoms = []
+    
+    for each entity in query {
+        phantoms.append(entity)
+    }
+    
+    return phantoms
 }
 ```
 
