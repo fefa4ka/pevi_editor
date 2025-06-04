@@ -16,14 +16,30 @@ FetchContent_Declare(
     GIT_TAG main
 )
 
-# Clone and build raylib-cimgui
+# Clone and build cimgui
 FetchContent_Declare(
-    raylib-cimgui
-    GIT_REPOSITORY https://github.com/alfredbaudisch/raylib-cimgui.git
+    cimgui
+    GIT_REPOSITORY https://github.com/cimgui/cimgui.git
     GIT_TAG master
 )
 
-FetchContent_MakeAvailable(joltc raylib-cimgui)
+FetchContent_MakeAvailable(joltc cimgui)
+ 
+find_library(LR_TEXT_LIB lr_text REQUIRED)
+find_library(LR_LIB lr REQUIRED)
+message(STATUS "LR_TEXT_LIB: ${LR_LIB}")
+find_path(LR_TEXT_INCLUDE_DIR lr_text.h REQUIRED)
+include_directories(${LR_TEXT_INCLUDE_DIR})
+if(NOT LR_TEXT_LIB)
+  include(FetchContent)
+  FetchContent_Declare(
+    lr_text
+    GIT_REPOSITORY https://github.com/fefa4ka/lr_text.git
+    GIT_TAG master)
+  FetchContent_MakeAvailable(lr_text) # Get linked_ring source directory
+  FetchContent_GetProperties(lr_text SOURCE_DIR LINKED_RING_SOURCE_DIR)
+  set(LR_TEXT_LIB lr_text)
+endif()                
 
 # Find the Raylib library
 # This assumes Raylib has been installed in a way CMake can find it
@@ -54,8 +70,10 @@ target_link_libraries(editor PRIVATE
     joltc
     flecs::flecs_static
     libuv::uv_a
-    raylib-cimgui
+    cimgui
     stdc++
+    ${LR_LIB}
+    ${LR_TEXT_LIB}
 )
 
 # --- Build Configuration ---
