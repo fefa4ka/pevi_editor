@@ -316,13 +316,83 @@ int main(int argc, char* argv[]) {
     // Create shader program
     GLuint shaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
     
-    // Create a quad for text rendering
+    // Load characters for "Hello World!"
+    const char* text = "Hello World!";
+    Character characters[256] = {0};
+    
+    // Load all ASCII characters
+    for (int c = 32; c < 127; c++) {
+        characters[c] = load_character(face, c);
+    }
+    
+    // Calculate text dimensions
+    float text_width = 0;
+    float text_height = 0;
+    for (const char* p = text; *p; p++) {
+        Character* ch = &characters[(unsigned char)*p];
+        text_width += ch->advance_x;
+        if (ch->height > text_height) {
+            text_height = ch->height;
+        }
+    }
+    
+    // Create a texture atlas for the text
+    int atlas_width = (int)text_width + 20;
+    int atlas_height = (int)text_height + 20;
+    unsigned char* atlas_data = calloc(atlas_width * atlas_height * 3, 1);
+    
+    // Copy characters to atlas
+    float x_offset = 10;
+    for (const char* p = text; *p; p++) {
+        Character* ch = &characters[(unsigned char)*p];
+        if (ch->texture == 0) continue;
+        
+        // Get character texture data
+        glBindTexture(GL_TEXTURE_2D, ch->texture);
+        unsigned char* char_data = malloc(ch->width * ch->height * 3);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, char_data);
+        
+        // Copy to atlas
+        int y_offset = atlas_height - ch->height - 10;
+        for (int y = 0; y < ch->height; y++) {
+            for (int x = 0; x < ch->width; x++) {
+                int src_idx = (y * ch->width + x) * 3;
+                int dst_idx = ((y_offset + y) * atlas_width + (int)x_offset + x) * 3;
+                if (dst_idx >= 0 && dst_idx < atlas_width * atlas_height * 3 - 2) {
+                    atlas_data[dst_idx] = char_data[src_idx];
+                    atlas_data[dst_idx + 1] = char_data[src_idx + 1];
+                    atlas_data[dst_idx + 2] = char_data[src_idx + 2];
+                }
+            }
+        }
+        
+        x_offset += ch->advance_x;
+        free(char_data);
+    }
+    
+    // Create atlas texture
+    GLuint atlas_texture;
+    glGenTextures(1, &atlas_texture);
+    glBindTexture(GL_TEXTURE_2D, atlas_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas_width, atlas_height, 0, 
+                 GL_RGB, GL_UNSIGNED_BYTE, atlas_data);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    free(atlas_data);
+    
+    // Create a quad for text rendering with proper aspect ratio
+    float aspect = (float)atlas_width / (float)atlas_height;
+    float quad_height = 2.0f;
+    float quad_width = quad_height * aspect;
+    
     float vertices[] = {
-        // positions          // texture coords
-        -2.0f,  1.0f, 0.0f,   0.0f, 0.0f,
-         2.0f,  1.0f, 0.0f,   1.0f, 0.0f,
-         2.0f, -1.0f, 0.0f,   1.0f, 1.0f,
-        -2.0f, -1.0f, 0.0f,   0.0f, 1.0f
+        // positions                      // texture coords
+        -quad_width/2,  quad_height/2, 0.0f,   0.0f, 0.0f,
+         quad_width/2,  quad_height/2, 0.0f,   1.0f, 0.0f,
+         quad_width/2, -quad_height/2, 0.0f,   1.0f, 1.0f,
+        -quad_width/2, -quad_height/2, 0.0f,   0.0f, 1.0f
     };
     
     unsigned int indices[] = {
@@ -352,17 +422,6 @@ int main(int argc, char* argv[]) {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     
-    // Load characters for "Hello World!"
-    const char* text = "Hello World!";
-    Character characters[256] = {0};
-    
-    // Load all ASCII characters
-    for (int c = 32; c < 127; c++) {
-        characters[c] = load_character(face, c);
-    }
-    
-    // We'll use the first character's texture for now
-    GLuint texture = characters['H'].texture;
     
     // Get uniform locations
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
@@ -407,7 +466,7 @@ int main(int argc, char* argv[]) {
         
         // Bind texture
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, atlas_texture);
         
         // Draw
         glBindVertexArray(VAO);
@@ -423,6 +482,9 @@ int main(int argc, char* argv[]) {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
+    
+    // Delete atlas texture
+    glDeleteTextures(1, &atlas_texture);
     
     // Delete all character textures
     for (int c = 32; c < 127; c++) {
