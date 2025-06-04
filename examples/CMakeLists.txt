@@ -34,9 +34,17 @@ target_link_libraries(libuv_example PRIVATE
 
 # Build the msdf text rendering example
 add_executable(msdf_text_3d msdf_text_3d.c)
-target_link_libraries(msdf_text_3d PRIVATE
-    glfw
-)
+if(APPLE)
+    target_link_libraries(msdf_text_3d PRIVATE
+        glfw
+        "-framework OpenGL"
+    )
+else()
+    target_link_libraries(msdf_text_3d PRIVATE
+        glfw
+        GL
+    )
+endif()
 
 # Set common properties for examples
 set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic msdf_text_3d PROPERTIES

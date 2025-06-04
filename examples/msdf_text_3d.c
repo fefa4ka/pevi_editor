@@ -3,11 +3,6 @@
 #endif
 
 #include <GLFW/glfw3.h>
-#ifdef __APPLE__
-#include <OpenGL/gl3.h>
-#else
-#include <GL/gl.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
