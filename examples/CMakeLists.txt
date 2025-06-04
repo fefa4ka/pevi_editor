@@ -32,12 +32,24 @@ target_link_libraries(libuv_example PRIVATE
     libuv::uv_a
 )
 
+# Build the msdf text rendering example
+add_executable(msdf_text_3d msdf_text_3d.c)
+target_link_libraries(msdf_text_3d PRIVATE
+    glfw
+    msdfgen::msdfgen
+    msdf-atlas-gen::msdf-atlas-gen
+)
+target_include_directories(msdf_text_3d PRIVATE
+    ${msdfgen_SOURCE_DIR}/include
+    ${msdf-atlas-gen_SOURCE_DIR}/include
+)
+
 # Set common properties for examples
-set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic PROPERTIES
+set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic msdf_text_3d PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
 )
 
 # Add install targets
-install(TARGETS raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic
+install(TARGETS raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic msdf_text_3d
     DESTINATION bin/examples
 )

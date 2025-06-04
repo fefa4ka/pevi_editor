@@ -23,7 +23,21 @@ FetchContent_Declare(
     GIT_TAG master
 )
 
-FetchContent_MakeAvailable(joltc cimgui)
+# Clone and build msdfgen
+FetchContent_Declare(
+    msdfgen
+    GIT_REPOSITORY https://github.com/Chlumsky/msdfgen.git
+    GIT_TAG master
+)
+
+# Clone and build msdf-atlas-gen
+FetchContent_Declare(
+    msdf-atlas-gen
+    GIT_REPOSITORY https://github.com/Chlumsky/msdf-atlas-gen.git
+    GIT_TAG master
+)
+
+FetchContent_MakeAvailable(joltc cimgui msdfgen msdf-atlas-gen)
  
 find_library(LR_TEXT_LIB lr_text REQUIRED)
 find_library(LR_LIB lr REQUIRED)
