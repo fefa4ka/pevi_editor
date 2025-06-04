@@ -36,12 +36,6 @@ target_link_libraries(libuv_example PRIVATE
 add_executable(msdf_text_3d msdf_text_3d.c)
 target_link_libraries(msdf_text_3d PRIVATE
     glfw
-    msdfgen::msdfgen
-    msdf-atlas-gen::msdf-atlas-gen
-)
-target_include_directories(msdf_text_3d PRIVATE
-    ${msdfgen_SOURCE_DIR}/include
-    ${msdf-atlas-gen_SOURCE_DIR}/include
 )
 
 # Set common properties for examples

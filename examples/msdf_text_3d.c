@@ -241,9 +241,7 @@ int main() {
     GLuint texture = create_placeholder_texture();
     
     // Get uniform locations
-    GLint modelLoc = glGetUniformLocation(sh
-
-aderProgram, "model");
+    GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
     GLint viewLoc = glGetUniformLocation(shaderProgram, "view");
     GLint projLoc = glGetUniformLocation(shaderProgram, "projection");
     GLint pxRangeLoc = glGetUniformLocation(shaderProgram, "pxRange");
