@@ -85,6 +85,36 @@ Pairs enable several important patterns:
 - **References**: Linking entities to external resources
 - **Graphs**: Building arbitrary relationship graphs between entities
 
+#### Built-in Hierarchy Support
+
+Many ECS implementations provide built-in support for hierarchies through a special `ChildOf` relationship. This provides powerful automatic features:
+
+```pseudo
+// Creating hierarchies
+parent = world.create_entity()
+child = world.create_entity_with_pair(ChildOf, parent)
+
+// Alternative: add relationship after creation
+child2 = world.create_entity()
+child2.add_pair(ChildOf, parent)
+
+// Automatic cleanup - deleting parent deletes all children
+world.delete_entity(parent)  // child and child2 are also deleted!
+
+// Hierarchical queries
+query = world.query([Position, ChildOf(parent)])  // All children of parent with Position
+
+// Path-based lookups (if supported)
+grandchild = world.create_entity_with_pair(ChildOf, child)
+path = grandchild.get_path()  // Returns something like "parent.child.grandchild"
+```
+
+Benefits of built-in hierarchy support:
+- **Automatic Cleanup**: Children are automatically deleted when parent is deleted
+- **Path Names**: Entities can be looked up by hierarchical paths
+- **Efficient Traversal**: Optimized iteration over parent-child relationships
+- **Cascading Operations**: Operations can cascade down the hierarchy
+
 ### Systems
 Systems contain the logic that operates on entities with specific component combinations.
 
@@ -206,13 +236,23 @@ phantom2.add_pair(ReferencesFile, main_file)  // Different view of same file
 // Query examples with relationships
 query = world.query([Phantom, ChildOf(group_entity)])  // All phantoms in a group
 query = world.query([ReferencesFile(file_entity)])     // All phantoms referencing a file
+
+// Leveraging built-in hierarchy features
+group = world.create_entity("CodeGroup")
+phantom1 = world.create_entity_with_pair(ChildOf, group)
+phantom2 = world.create_entity_with_pair(ChildOf, group)
+
+// Deleting the group automatically cleans up all phantoms in it
+world.delete_entity(group)  // phantom1 and phantom2 are also deleted
 ```
 
 Benefits of using pairs for relationships:
 - **Flexible Hierarchies**: Phantoms can be organized in groups and subgroups
+- **Automatic Cleanup**: Deleting a parent group automatically removes all child phantoms
 - **Multiple Views**: Multiple phantoms can reference the same file, showing different parts
 - **Dependency Tracking**: Track which phantoms depend on others
 - **Efficient Queries**: Query for all entities with specific relationships
+- **Path-based Access**: Navigate hierarchies using path names (e.g., "UI.Components.Button")
 
 ## System Architecture
 
@@ -493,6 +533,26 @@ function get_phantoms_in_group(world, group) {
     }
     
     return phantoms
+}
+
+// Example: Organizing phantoms hierarchically
+function organize_project_phantoms(world) {
+    // Create main project group
+    project = create_phantom_group(world, "MyProject")
+    
+    // Create subgroups
+    ui_group = create_phantom_group(world, "UI", project)
+    backend_group = create_phantom_group(world, "Backend", project)
+    
+    // Create phantoms in groups
+    button_phantom = create_phantom(world, 100, 0, 0, "button code", ui_group)
+    api_phantom = create_phantom(world, -100, 0, 0, "api code", backend_group)
+    
+    // Path-based access (if supported by ECS)
+    // button_path = "MyProject.UI.button_phantom"
+    
+    // Deleting project group cleans up everything
+    // world.delete_entity(project)  // Deletes all subgroups and phantoms!
 }
 ```
 
