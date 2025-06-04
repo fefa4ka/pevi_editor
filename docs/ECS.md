@@ -1,273 +1,355 @@
-# Proposal: Integrating Flecs for Entity Component System (ECS) in Pevi
+# Entity Component System Architecture in Pevi
 
-## 1. Introduction and Goal
+## Overview
 
-This document proposes the integration of **Flecs**, a high-performance Entity Component System (ECS), into the Pevi project. The primary goal is to establish a robust, data-oriented foundation for managing "phantoms" (3D code objects), their diverse properties, and associated behaviors. Adopting Flecs will enhance modularity, performance, and future extensibility of Pevi's core architecture.
+Pevi uses an Entity Component System (ECS) architecture to manage all objects in the 3D editor space. This document describes the conceptual model and patterns used, independent of any specific ECS implementation.
 
-Pevi's concept of spatially arranged code "phantoms" naturally aligns with an ECS paradigm, where phantoms are entities, their characteristics (position, text content, visual style, interaction state) are components, and their behaviors (rendering, interaction, saving) are implemented by systems.
+## Core Concepts
 
-## 2. Why Flecs for Pevi?
+### Entities
+Entities are unique identifiers that represent objects in the editor. They have no data or behavior on their own - they're simply IDs that components can be attached to.
 
-Flecs offers several advantages that are well-suited for Pevi's requirements:
+```pseudo
+entity = world.create_entity()
+entity2 = world.create_entity("named_entity")
+```
 
-*   **Data-Oriented Design:** Promotes efficient memory layout and access patterns, crucial for performance as the number of phantoms and their complexity grows.
-*   **Modular and Decoupled Systems:** Logic is encapsulated in systems that operate on specific combinations of components. This leads to cleaner, more maintainable, and testable code.
-*   **Dynamic Composition:** Phantoms can easily acquire or lose characteristics and behaviors by adding or removing components at runtime (e.g., a phantom becoming "editable" or "error-highlighted").
-*   **High Performance:** Flecs is designed for speed, efficiently managing large numbers of entities and components, and providing fast querying.
-*   **Powerful Querying:** Offers a rich query language to find entities based on their components, essential for systems to identify which phantoms to process.
-*   **Extensibility:** Simplifies the addition of new types of phantoms, properties, or global systems in the future.
-*   **Alignment with Architecture:** Directly supports the "Component Architecture" principle outlined in `ARCHITECTURE.md`.
+### Components
+Components are data containers that can be attached to entities. They contain only data, no logic.
 
-## 3. Architectural Integration
+```pseudo
+// Component definitions
+component Position {
+    x: float
+    y: float
+    z: float
+}
 
-Flecs will be integrated into Pevi's existing layered architecture as follows:
+component TextBuffer {
+    content: string
+    filepath: string
+    is_dirty: boolean
+}
 
-### 3.1. Core Layer Integration
+component Phantom {
+    width: float
+    height: float
+    is_visible: boolean
+    is_focused: boolean
+}
+```
 
-*   **Flecs World Management:**
-    *   A global Flecs world (`ecs_world_t*`) will be initialized and managed within the Core layer.
-    *   **New Files:**
-        *   `include/pevi/core/ecs_manager.h`: Public header defining the interface for accessing the Flecs world (e.g., `pevi_ecs_get_world()`) and basic ECS utility functions.
-        *   `src/core/ecs_manager.c`: Implementation for initializing, managing, and cleaning up the Flecs world. Also, for registering core, engine-level components if any.
+### Systems
+Systems contain the logic that operates on entities with specific component combinations.
 
-### 3.2. Editor (Domain) Layer Integration
-
-*   **Pevi-Specific Components:**
-    *   Components defining the properties of phantoms and other editor-specific entities will reside here.
-    *   **New Files:**
-        *   `include/pevi/editor/phantom_components.h`: Headers for Pevi-specific components (e.g., `PeviPosition`, `PeviRotation`, `PeviTextBufferRef`, `PeviFilePath`, `PeviIsFocused`, `PeviIsGrabbed`).
-        *   `src/editor/phantom_components.c`: Implementation for registering these components with Flecs.
-*   **Pevi-Specific Systems:**
-    *   Systems that implement the logic for phantoms and editor functionalities.
-    *   **New Files:**
-        *   `include/pevi/editor/phantom_systems.h`: Headers for Pevi-specific systems.
-        *   `src/editor/phantom_systems.c`: Implementation of systems (e.g., `PhantomRenderSystem`, `PhantomInteractionSystem`, `PhantomFileIOSystem`, `CommandExecutionSystem`).
-
-This structure maintains a clear separation of concerns, with the Core layer providing the generic ECS capability and the Editor layer defining the application-specific data (components) and logic (systems).
-
-## 4. Core Concepts and Usage Examples
-
-### 4.1. Flecs World Initialization
-
-The Flecs world will be initialized early in the application's lifecycle, likely in `src/main.c` or an application initialization module, using the `ecs_manager`:
-
-```c
-// In main.c or app_init.c
-#include "pevi/core/ecs_manager.h"
-#include "pevi/editor/phantom_components.h"
-#include "pevi/editor/phantom_systems.h"
-
-// ...
-int main(int argc, char *argv[]) {
-    pevi_ecs_init_world(); // Initializes the global Flecs world via ecs_manager
+```pseudo
+system UpdatePhantomPositions {
+    // Query for entities with both Position and Phantom components
+    query: [Position, Phantom]
     
-    pevi_register_phantom_components(); // Registers all editor-specific components
-    pevi_register_phantom_systems();  // Registers all editor-specific systems
-
-    ecs_world_t* world = pevi_ecs_get_world();
-    // ... main loop ...
-
-    pevi_ecs_fini_world(); // Cleans up the Flecs world
-    return 0;
-}
-```
-
-### 4.2. Component Definition
-
-Components are C structs representing pure data.
-
-```c
-// include/pevi/editor/phantom_components.h
-typedef struct { float x, y, z; } PeviPosition;
-typedef struct { float qx, qy, qz, qw; } PeviRotation;
-typedef struct { YourTextBuffer* buffer_ptr; } PeviTextBufferRef; // Points to existing text buffer
-typedef struct { char path[512]; bool is_dirty; } PeviFileState;
-// Tag components (empty structs) for states:
-typedef struct { } PeviIsFocused;
-typedef struct { } PeviIsGrabbed;
-```
-Registration in `src/editor/phantom_components.c`:
-```c
-// src/editor/phantom_components.c
-#include "pevi/core/ecs_manager.h"
-#include "phantom_components.h" // Self-header
-
-void pevi_register_phantom_components() {
-    ecs_world_t* world = pevi_ecs_get_world();
-    ECS_COMPONENT_DEFINE(world, PeviPosition);
-    ECS_COMPONENT_DEFINE(world, PeviRotation);
-    ECS_COMPONENT_DEFINE(world, PeviTextBufferRef);
-    ECS_COMPONENT_DEFINE(world, PeviFileState);
-    ECS_TAG_DEFINE(world, PeviIsFocused); // For tags
-    ECS_TAG_DEFINE(world, PeviIsGrabbed);
-    // ... and so on for all components
-}
-```
-
-### 4.3. Phantom (Entity) Creation
-
-When a new phantom is needed (e.g., opening a file, `:new` command):
-
-```c
-// Example: somewhere in command processing logic
-ecs_world_t* world = pevi_ecs_get_world();
-ecs_entity_t new_phantom = ecs_new_id(world); // Create a new entity
-
-// Set initial components
-ecs_set(world, new_phantom, PeviPosition, {0.0f, 0.0f, -5.0f}); // Default position
-ecs_set(world, new_phantom, PeviRotation, {0.0f, 0.0f, 0.0f, 1.0f}); // Default rotation (identity quaternion)
-
-// Create and assign a text buffer
-YourTextBuffer* text_buf = create_my_text_buffer();
-ecs_set(world, new_phantom, PeviTextBufferRef, {text_buf});
-
-if (filepath_to_open) {
-    ecs_set(world, new_phantom, PeviFileState, { .path = strcpy_s(path_buf, sizeof(path_buf), filepath_to_open), .is_dirty = false });
-    // Load file content into text_buf
-} else {
-    ecs_set(world, new_phantom, PeviFileState, { .path = "", .is_dirty = false });
-}
-```
-
-### 4.4. System Definition
-
-Systems contain the logic that operates on entities with specific components.
-
-```c
-// src/editor/phantom_systems.c
-
-// System to render phantoms that have a position and text buffer
-void RenderPhantoms(ecs_iter_t *it) {
-    PeviPosition *p = ecs_field(it, PeviPosition, 1);       // Field 1: PeviPosition
-    PeviTextBufferRef *t = ecs_field(it, PeviTextBufferRef, 2); // Field 2: PeviTextBufferRef
-    // PeviRotation *r = ecs_field(it, PeviRotation, 3);    // Optional: PeviRotation (if term is optional)
-
-    for (int i = 0; i < it->count; i ++) {
-        // Get entity ID: it->entities[i]
-        // Access components: p[i], t[i].buffer_ptr
-        // Use Raylib to draw text from t[i].buffer_ptr at position p[i]
-        // Example: DrawText3D(font, t[i].buffer_ptr->content, (Vector3){p[i].x, p[i].y, p[i].z}, ...);
-    }
-}
-
-// System to handle grabbing/moving focused phantoms
-void GrabFocusedPhantom(ecs_iter_t *it) {
-    PeviPosition *p = ecs_field(it, PeviPosition, 1); // Field 1: PeviPosition
-    // This system queries for entities that are BOTH PeviIsFocused AND PeviIsGrabbed
-    
-    for (int i = 0; i < it->count; i++) {
-        // Update p[i] based on mouse movement
-        // Example: p[i].x += GetMouseDelta().x * drag_speed;
-    }
-}
-
-void pevi_register_phantom_systems() {
-    ecs_world_t* world = pevi_ecs_get_world();
-
-    ECS_SYSTEM_DEFINE(world, RenderPhantoms, EcsOnUpdate, PeviPosition, PeviTextBufferRef, ?PeviRotation);
-    // The ?PeviRotation makes the Rotation component optional for this system.
-    // EcsOnUpdate means it runs every frame as part of ecs_progress().
-
-    ECS_SYSTEM_DEFINE(world, GrabFocusedPhantom, EcsOnUpdate, PeviPosition, PeviIsFocused, PeviIsGrabbed);
-    // This system will only match entities that have Position, AND are Focused, AND are Grabbed.
-}
-```
-
-### 4.5. Main Loop Integration
-
-The main application loop in `src/main.c` will drive Flecs:
-
-```c
-// src/main.c (simplified loop)
-ecs_world_t* world = pevi_ecs_get_world();
-while (!WindowShouldClose()) {
-    float dt = GetFrameTime();
-
-    // --- Input Processing (could be its own system or pre-ECS step) ---
-    // ... handle raw input, potentially setting components like MouseInputState ...
-
-    // --- ECS Update ---
-    ecs_progress(world, dt); // This executes all registered Flecs systems
-
-    // --- Rendering (largely handled by Flecs Render Systems) ---
-    BeginDrawing();
-    ClearBackground(RAYWHITE);
-    BeginMode3D(camera_entity_or_struct.camera); // Camera might also be an entity or managed by a system
-        // RenderPhantoms system (and others) will be called by ecs_progress()
-    EndMode3D();
-    // ... UI rendering (e.g. ImGui, could also be a Flecs system or post-ECS step) ...
-    EndDrawing();
-}
-```
-
-### 4.6. Querying and Modifying Components
-
-Logic outside of systems (e.g., command handlers) can still interact with Flecs:
-
-```c
-// Example: Focusing a phantom on click
-void process_phantom_click(ecs_entity_t clicked_phantom_id) {
-    ecs_world_t* world = pevi_ecs_get_world();
-
-    // Remove PeviIsFocused from any currently focused phantom
-    ecs_filter_t *filter = ecs_filter(world, { .terms = {{ ecs_id(PeviIsFocused) }} });
-    ecs_iter_t it = ecs_filter_iter(world, filter);
-    while(ecs_filter_next(&it)) {
-        for(int i = 0; i < it.count; i++) {
-            ecs_remove(world, it.entities[i], PeviIsFocused);
+    update(delta_time) {
+        for each entity matching query {
+            position = entity.get(Position)
+            phantom = entity.get(Phantom)
+            
+            // Update logic here
+            if phantom.is_visible {
+                // Process phantom position
+            }
         }
     }
-    ecs_filter_fini(filter);
-
-    // Add PeviIsFocused to the newly clicked phantom
-    ecs_add(world, clicked_phantom_id, PeviIsFocused);
 }
 ```
 
-## 5. Impact on Existing Architecture and Documentation
+## Pevi Entity Architecture
 
-Integrating Flecs will refine and solidify concepts outlined in `ARCHITECTURE.md` and `PROJECT_STRUCTURE.md`:
+### Core Entity Types
 
-*   **`ARCHITECTURE.md`:**
-    *   **Component Architecture:** Will explicitly state it's implemented using Flecs. Benefits will be updated to reflect Flecs's strengths (data-orientation, powerful queries).
-    *   **Spatial Management:** Will be realized through Flecs components (e.g., `PeviPosition`, `PeviRotation`) attached to phantom entities. Systems will handle spatial logic.
-    *   **Phantom System:** Phantoms become Flecs entities. Their lifecycle, properties, and behaviors are managed via components and systems.
-    *   **Data Flow:** The diagram and description will be updated to show `ecs_progress()` as the central mechanism for state mutation via systems, and systems querying Flecs for data.
-    *   **Technology Stack:** Flecs will be added.
-*   **`PROJECT_STRUCTURE.md`:**
-    *   The new files (`ecs_manager.h/c`, `phantom_components.h/c`, `phantom_systems.h/c`) will be documented in their respective `include/pevi/core/`, `src/core/`, `include/pevi/editor/`, and `src/editor/` sections.
-    *   The "Relationship to `ARCHITECTURE.md`" section will be updated to reflect how these new ECS-specific files map to the architectural layers.
+#### Editor Entity
+The main editor singleton entity that manages global editor state.
 
-The existing **Text Engine** and **Buffer System** will remain crucial. Flecs components (like `PeviTextBufferRef`) will hold pointers or references to text buffers managed by these systems, effectively linking the ECS world to the text data.
+```pseudo
+entity Editor {
+    components: [
+        EditorMode { 
+            is_navigation: boolean
+            is_edit: boolean
+            is_command: boolean
+        },
+        EditorConfig {
+            theme: string
+            font_size: float
+        }
+    ]
+}
+```
 
-## 6. Benefits Summary
+#### Camera Entity
+Represents the 3D camera for navigating the editor space.
 
-*   **Clearer State Management:** Centralized and predictable state changes through components and systems.
-*   **Improved Modularity:** Decoupled logic makes features easier to add, remove, or modify.
-*   **Enhanced Performance:** Data-oriented design is cache-friendly.
-*   **Greater Extensibility:** Adding new phantom types or behaviors becomes simpler.
-*   **Testability:** Systems and components can be tested more easily in isolation.
+```pseudo
+entity Camera {
+    components: [
+        Position { x, y, z },
+        Rotation { pitch, yaw, roll },
+        Camera {
+            fov: float
+            near_plane: float
+            far_plane: float
+            target: vec3
+        }
+    ]
+}
+```
 
-## 7. Proposed Migration Strategy / Next Steps
+#### Phantom Entities
+Phantoms are the visual representations of code in 3D space.
 
-1.  **Setup Core ECS Management:**
-    *   Create `ecs_manager.h` and `ecs_manager.c` in the `core` layer.
-    *   Implement `pevi_ecs_init_world()`, `pevi_ecs_get_world()`, `pevi_ecs_fini_world()`.
-    *   Integrate initialization/cleanup calls into `src/main.c`.
-2.  **Define Basic Phantom Components:**
-    *   Create `phantom_components.h` and `phantom_components.c` in the `editor` layer.
-    *   Define and register essential components: `PeviPosition`, `PeviTextBufferRef`.
-3.  **Refactor Phantom Creation:**
-    *   Modify the logic for creating a new phantom (e.g., from a command) to create a Flecs entity and assign the basic components.
-4.  **Implement a Basic Render System:**
-    *   Create `phantom_systems.h` and `phantom_systems.c`.
-    *   Implement a simple `RenderPhantoms` system that queries for entities with `PeviPosition` and `PeviTextBufferRef` and uses Raylib to draw them.
-    *   Register this system and ensure `ecs_progress()` is called in the main loop.
-5.  **Iterative Migration:**
-    *   Gradually migrate existing phantom properties (e.g., file path, focus state, grabbed state) to Flecs components.
-    *   Refactor corresponding logic (e.g., input handling, file operations) into new Flecs systems or adapt existing functions to interact with Flecs entities.
-    *   Address camera management (potentially making the camera an entity or its state managed by a system).
-6.  **Documentation Update:**
-    *   Update `ARCHITECTURE.md` and `PROJECT_STRUCTURE.md` as outlined in section 5.
+```pseudo
+entity Phantom {
+    components: [
+        Position { x, y, z },
+        Rotation { pitch, yaw, roll },
+        Phantom {
+            width: float
+            height: float
+            is_visible: boolean
+            is_focused: boolean
+            phantom_id: int
+        },
+        TextBuffer {
+            content: string
+            length: size
+            capacity: size
+            is_dirty: boolean
+            filepath: string  // null if unsaved
+        }
+    ]
+}
+```
 
-This phased approach allows for incremental adoption of Flecs, minimizing disruption and allowing the team to gain familiarity with the ECS paradigm.
+### Relationships
+
+Pevi uses entity relationships to model connections between entities.
+
+```pseudo
+// Parent-child relationships for grouping
+phantom1.add_relationship(ChildOf, group_entity)
+phantom2.add_relationship(ChildOf, group_entity)
+
+// Phantom references a file
+phantom.add_relationship(ReferencesFile, file_entity)
+
+// Camera targets a phantom
+camera.add_relationship(Targeting, phantom)
+```
+
+## System Architecture
+
+### Core Systems
+
+#### Input Processing System
+```pseudo
+system ProcessInput {
+    query: [EditorMode]
+    
+    update() {
+        mode = get_singleton(EditorMode)
+        
+        if mode.is_navigation {
+            // Process navigation inputs
+            dispatch_event(NavigationInput, input_data)
+        } else if mode.is_edit {
+            // Process edit inputs
+            dispatch_event(EditInput, input_data)
+        }
+    }
+}
+```
+
+#### Phantom Management System
+```pseudo
+system ManagePhantoms {
+    query: [Phantom, Position, TextBuffer]
+    
+    update() {
+        for each entity matching query {
+            phantom = entity.get(Phantom)
+            buffer = entity.get(TextBuffer)
+            
+            if buffer.is_dirty {
+                // Mark for save
+                dispatch_event(BufferDirty, entity)
+            }
+            
+            if phantom.is_focused {
+                // Update focus visuals
+                update_phantom_appearance(entity)
+            }
+        }
+    }
+}
+```
+
+#### Camera Control System
+```pseudo
+system ControlCamera {
+    query: [Camera, Position, Rotation]
+    singleton_query: [EditorMode]
+    
+    update(delta_time) {
+        mode = get_singleton(EditorMode)
+        if not mode.is_navigation {
+            return
+        }
+        
+        for each camera matching query {
+            position = camera.get(Position)
+            rotation = camera.get(Rotation)
+            
+            // Apply movement based on input
+            apply_camera_movement(position, rotation, delta_time)
+            
+            // Update view matrix
+            update_view_matrix(camera)
+        }
+    }
+}
+```
+
+#### Text Rendering System
+```pseudo
+system RenderText {
+    query: [Phantom, TextBuffer, Position]
+    singleton_query: [Camera]
+    
+    render() {
+        camera = get_singleton_entity(Camera)
+        camera_pos = camera.get(Position)
+        
+        for each phantom matching query {
+            pos = phantom.get(Position)
+            buffer = phantom.get(TextBuffer)
+            phantom_data = phantom.get(Phantom)
+            
+            if phantom_data.is_visible {
+                // Calculate screen position
+                screen_pos = world_to_screen(pos, camera)
+                
+                // Render text content
+                render_text_buffer(buffer, screen_pos, phantom_data)
+            }
+        }
+    }
+}
+```
+
+### Event System Integration
+
+Events are handled through queries and systems that respond to state changes.
+
+```pseudo
+// Event types
+event PhantomSelected { entity: EntityID }
+event BufferModified { entity: EntityID, change: TextChange }
+event FileOpened { filepath: string, content: string }
+
+// Event handling system
+system HandlePhantomSelection {
+    event_query: [PhantomSelected]
+    
+    on_event(event: PhantomSelected) {
+        // Clear previous focus
+        for each phantom with Phantom component {
+            phantom.is_focused = false
+        }
+        
+        // Set new focus
+        selected = world.get_entity(event.entity)
+        phantom = selected.get(Phantom)
+        phantom.is_focused = true
+        
+        // Update editor mode
+        editor_mode = get_singleton(EditorMode)
+        editor_mode.is_edit = true
+    }
+}
+```
+
+## Query Patterns
+
+### Basic Queries
+```pseudo
+// All entities with Position
+query = world.query([Position])
+
+// All entities with Position AND Velocity
+query = world.query([Position, Velocity])
+
+// All entities with Position but NOT Hidden
+query = world.query([Position, !Hidden])
+```
+
+### Hierarchical Queries
+```pseudo
+// All phantoms that are children of a specific group
+query = world.query([Phantom, ChildOf(group_entity)])
+
+// All top-level phantoms (no parent)
+query = world.query([Phantom, !ChildOf(*)])
+```
+
+### Singleton Queries
+```pseudo
+// Access singleton components
+camera_settings = world.get_singleton(CameraSettings)
+editor_mode = world.get_singleton(EditorMode)
+```
+
+## Benefits for Pevi
+
+1. **Modularity**: Each aspect of the editor (phantoms, camera, text editing) is isolated in its own components and systems.
+
+2. **Flexibility**: New features can be added by creating new components and systems without modifying existing code.
+
+3. **Performance**: ECS allows efficient iteration over entities with specific component combinations.
+
+4. **Spatial Organization**: The ECS naturally supports Pevi's spatial metaphor - positions, relationships, and hierarchies are first-class concepts.
+
+5. **State Management**: All editor state is explicitly stored in components, making it easy to save/load, undo/redo, or synchronize.
+
+6. **Extensibility**: The component-based architecture makes it straightforward to add new phantom types, visualization modes, or editor features.
+
+## Example: Creating a New Phantom
+
+```pseudo
+function create_phantom(world, x, y, z, content) {
+    // Create entity
+    phantom = world.create_entity()
+    
+    // Add components
+    phantom.add(Position { x: x, y: y, z: z })
+    phantom.add(Rotation { pitch: 0, yaw: 0, roll: 0 })
+    phantom.add(Phantom {
+        width: 400,
+        height: 300,
+        is_visible: true,
+        is_focused: false,
+        phantom_id: generate_id()
+    })
+    phantom.add(TextBuffer {
+        content: content,
+        length: content.length,
+        capacity: content.length * 2,
+        is_dirty: false,
+        filepath: null
+    })
+    
+    // Dispatch creation event
+    world.dispatch_event(PhantomCreated { entity: phantom })
+    
+    return phantom
+}
+```
+
+This architecture provides a clean separation of concerns while maintaining the flexibility needed for Pevi's innovative 3D code editing approach.
