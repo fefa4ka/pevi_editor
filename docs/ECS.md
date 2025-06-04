@@ -39,6 +39,23 @@ component Phantom {
 }
 ```
 
+### Tags
+Tags are components without data - they're used to mark entities with specific properties or states. Tags are useful for categorization, state tracking, and efficient querying.
+
+```pseudo
+// Tag definitions (components with no data)
+tag Selected
+tag Hidden
+tag Modified
+tag Focused
+tag Locked
+
+// Using tags
+entity.add_tag(Selected)
+entity.has_tag(Selected)  // returns true
+entity.remove_tag(Selected)
+```
+
 ### Systems
 Systems contain the logic that operates on entities with specific component combinations.
 
@@ -124,6 +141,13 @@ entity Phantom {
             is_dirty: boolean
             filepath: string  // null if unsaved
         }
+    ],
+    tags: [
+        // Possible tags for phantoms
+        Selected,    // Currently selected by user
+        Modified,    // Has unsaved changes
+        Locked,      // Cannot be edited
+        Hidden       // Temporarily hidden from view
     ]
 }
 ```
@@ -286,8 +310,14 @@ query = world.query([Position])
 // All entities with Position AND Velocity
 query = world.query([Position, Velocity])
 
-// All entities with Position but NOT Hidden
+// All entities with Position but NOT Hidden tag
 query = world.query([Position, !Hidden])
+
+// All entities with Selected tag
+query = world.query([Selected])
+
+// All entities with Position and Selected tag
+query = world.query([Position, Selected])
 ```
 
 ### Hierarchical Queries
@@ -320,6 +350,8 @@ editor_mode = world.get_singleton(EditorMode)
 
 6. **Extensibility**: The component-based architecture makes it straightforward to add new phantom types, visualization modes, or editor features.
 
+7. **Efficient Tagging**: Tags provide a lightweight way to mark entities without the overhead of full components, perfect for states like Selected, Hidden, or Modified.
+
 ## Example: Creating a New Phantom
 
 ```pseudo
@@ -345,10 +377,31 @@ function create_phantom(world, x, y, z, content) {
         filepath: null
     })
     
+    // Add relevant tags
+    if content != "" {
+        phantom.add_tag(Modified)  // Mark as modified if has content
+    }
+    
     // Dispatch creation event
     world.dispatch_event(PhantomCreated { entity: phantom })
     
     return phantom
+}
+
+// Example: Selecting a phantom
+function select_phantom(world, phantom) {
+    // Remove Selected tag from all phantoms
+    selected_query = world.query([Selected])
+    for each entity in selected_query {
+        entity.remove_tag(Selected)
+    }
+    
+    // Add Selected tag to this phantom
+    phantom.add_tag(Selected)
+    
+    // Update focus in Phantom component
+    phantom_comp = phantom.get(Phantom)
+    phantom_comp.is_focused = true
 }
 ```
 
