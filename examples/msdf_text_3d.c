@@ -147,25 +147,58 @@ GLuint create_shader_program(const char* vertexSource, const char* fragmentSourc
     return program;
 }
 
-// Create a simple checkerboard texture as placeholder for MSDF atlas
+// Create a simple letter "A" texture to simulate MSDF
 GLuint create_placeholder_texture() {
     GLuint texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     
-    // Create a simple gradient pattern as placeholder
+    // Create a simple letter "A" pattern
     unsigned char* data = malloc(256 * 256 * 3);
+    
+    // Initialize to black (outside the letter)
+    memset(data, 0, 256 * 256 * 3);
+    
+    // Draw a simple "A" shape
     for (int y = 0; y < 256; y++) {
         for (int x = 0; x < 256; x++) {
             int idx = (y * 256 + x) * 3;
-            // Create a circular gradient to simulate MSDF
-            float dx = (x - 128) / 128.0f;
-            float dy = (y - 128) / 128.0f;
-            float dist = sqrtf(dx*dx + dy*dy);
-            unsigned char val = (unsigned char)(255 * (1.0f - dist));
-            data[idx] = val;
-            data[idx + 1] = val;
-            data[idx + 2] = val;
+            
+            // Normalize coordinates
+            float nx = x / 256.0f;
+            float ny = y / 256.0f;
+            
+            // Define the "A" shape using distance fields
+            float dist = 1.0f;
+            
+            // Left diagonal line
+            float leftDist = fabsf((nx - 0.2f) - (ny - 0.8f) * 0.5f);
+            
+            // Right diagonal line  
+            float rightDist = fabsf((0.8f - nx) - (ny - 0.8f) * 0.5f);
+            
+            // Horizontal bar
+            float barDist = (ny > 0.4f && ny < 0.6f) ? fabsf(nx - 0.5f) : 1.0f;
+            
+            // Combine distances
+            if (ny < 0.8f && ny > 0.2f) {
+                if (leftDist < 0.1f || rightDist < 0.1f) {
+                    dist = 0.0f;
+                }
+                if (barDist < 0.3f && ny > 0.4f && ny < 0.6f) {
+                    dist = 0.0f;
+                }
+            }
+            
+            // Create MSDF-like values (simplified)
+            float edge = 0.5f + dist * 2.0f;
+            edge = fmaxf(0.0f, fminf(1.0f, edge));
+            
+            // For MSDF, we'd normally have different values per channel
+            // Here we'll simulate it with slight variations
+            data[idx] = (unsigned char)(edge * 255);
+            data[idx + 1] = (unsigned char)(edge * 255 * 0.95f);
+            data[idx + 2] = (unsigned char)(edge * 255 * 0.9f);
         }
     }
     
