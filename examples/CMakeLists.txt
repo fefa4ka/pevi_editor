@@ -34,15 +34,18 @@ target_link_libraries(libuv_example PRIVATE
 
 # Build the msdf text rendering example
 add_executable(msdf_text_3d msdf_text_3d.c)
+target_include_directories(msdf_text_3d PRIVATE ${FREETYPE_INCLUDE_DIRS})
 if(APPLE)
     target_link_libraries(msdf_text_3d PRIVATE
         glfw
         "-framework OpenGL"
+        ${FREETYPE_LIBRARIES}
     )
 else()
     target_link_libraries(msdf_text_3d PRIVATE
         glfw
         GL
+        ${FREETYPE_LIBRARIES}
     )
 endif()
 

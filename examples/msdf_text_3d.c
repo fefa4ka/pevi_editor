@@ -4,10 +4,21 @@
 
 #define GLFW_INCLUDE_GLCOREARB
 #include <GLFW/glfw3.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+
+typedef struct {
+    GLuint texture;
+    int width;
+    int height;
+    float advance_x;
+    float bearing_x;
+    float bearing_y;
+} Character;
 
 
 // Simple vertex and fragment shaders for MSDF rendering
@@ -147,73 +158,136 @@ GLuint create_shader_program(const char* vertexSource, const char* fragmentSourc
     return program;
 }
 
-// Create a simple letter "A" texture to simulate MSDF
-GLuint create_placeholder_texture() {
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    
-    // Create a simple letter "A" pattern
-    unsigned char* data = malloc(256 * 256 * 3);
-    
-    // Initialize to black (outside the letter)
-    memset(data, 0, 256 * 256 * 3);
-    
-    // Draw a simple "A" shape
-    for (int y = 0; y < 256; y++) {
-        for (int x = 0; x < 256; x++) {
-            int idx = (y * 256 + x) * 3;
+// Simple distance field generation from bitmap
+void generate_distance_field(unsigned char* bitmap, int width, int height, unsigned char* output) {
+    // This is a simplified SDF generation - for production use msdfgen
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int idx = y * width + x;
+            float min_dist = 999999.0f;
+            int inside = bitmap[idx] > 128;
             
-            // Normalize coordinates
-            float nx = x / 256.0f;
-            float ny = y / 256.0f;
-            
-            // Define the "A" shape using distance fields
-            float dist = 1.0f;
-            
-            // Left diagonal line
-            float leftDist = fabsf((nx - 0.2f) - (ny - 0.8f) * 0.5f);
-            
-            // Right diagonal line  
-            float rightDist = fabsf((0.8f - nx) - (ny - 0.8f) * 0.5f);
-            
-            // Horizontal bar
-            float barDist = (ny > 0.4f && ny < 0.6f) ? fabsf(nx - 0.5f) : 1.0f;
-            
-            // Combine distances
-            if (ny < 0.8f && ny > 0.2f) {
-                if (leftDist < 0.1f || rightDist < 0.1f) {
-                    dist = 0.0f;
-                }
-                if (barDist < 0.3f && ny > 0.4f && ny < 0.6f) {
-                    dist = 0.0f;
+            // Search in a small radius for edge
+            int search_radius = 8;
+            for (int dy = -search_radius; dy <= search_radius; dy++) {
+                for (int dx = -search_radius; dx <= search_radius; dx++) {
+                    int nx = x + dx;
+                    int ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        int nidx = ny * width + nx;
+                        int neighbor_inside = bitmap[nidx] > 128;
+                        if (inside != neighbor_inside) {
+                            float dist = sqrtf(dx*dx + dy*dy);
+                            if (dist < min_dist) {
+                                min_dist = dist;
+                            }
+                        }
+                    }
                 }
             }
             
-            // Create MSDF-like values (simplified)
-            float edge = 0.5f + dist * 2.0f;
-            edge = fmaxf(0.0f, fminf(1.0f, edge));
+            // Normalize distance to 0-255 range
+            if (min_dist > search_radius) min_dist = search_radius;
+            float normalized = min_dist / search_radius;
+            if (!inside) normalized = -normalized;
             
-            // For MSDF, we'd normally have different values per channel
-            // Here we'll simulate it with slight variations
-            data[idx] = (unsigned char)(edge * 255);
-            data[idx + 1] = (unsigned char)(edge * 255 * 0.95f);
-            data[idx + 2] = (unsigned char)(edge * 255 * 0.9f);
+            // Map to 0-255 with 0.5 at the edge
+            int value = (int)((normalized * 0.5f + 0.5f) * 255);
+            value = value < 0 ? 0 : (value > 255 ? 255 : value);
+            
+            // For simple SDF, use same value for all channels
+            // Real MSDF would compute different channels
+            output[idx * 3] = value;
+            output[idx * 3 + 1] = value;
+            output[idx * 3 + 2] = value;
+        }
+    }
+}
+
+// Load a character from font and create texture
+Character load_character(FT_Face face, char c) {
+    Character character = {0};
+    
+    // Load character glyph
+    if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+        printf("Failed to load glyph '%c'\n", c);
+        return character;
+    }
+    
+    FT_GlyphSlot g = face->glyph;
+    
+    // Generate texture
+    glGenTextures(1, &character.texture);
+    glBindTexture(GL_TEXTURE_2D, character.texture);
+    
+    // Create distance field from bitmap
+    int width = g->bitmap.width;
+    int height = g->bitmap.rows;
+    int padded_width = width + 16;  // Add padding for distance field
+    int padded_height = height + 16;
+    
+    // Create padded bitmap
+    unsigned char* padded_bitmap = calloc(padded_width * padded_height, 1);
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            padded_bitmap[(y + 8) * padded_width + (x + 8)] = 
+                g->bitmap.buffer[y * g->bitmap.pitch + x];
         }
     }
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 256, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    // Generate distance field
+    unsigned char* sdf_data = malloc(padded_width * padded_height * 3);
+    generate_distance_field(padded_bitmap, padded_width, padded_height, sdf_data);
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, padded_width, padded_height, 0, 
+                 GL_RGB, GL_UNSIGNED_BYTE, sdf_data);
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
-    free(data);
-    return texture;
+    // Store character info
+    character.width = padded_width;
+    character.height = padded_height;
+    character.bearing_x = g->bitmap_left - 8;
+    character.bearing_y = g->bitmap_top + 8;
+    character.advance_x = g->advance.x / 64.0f;
+    
+    free(padded_bitmap);
+    free(sdf_data);
+    
+    return character;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    // Get font path from command line or use default
+    const char* font_path = argc > 1 ? argv[1] : "/System/Library/Fonts/Helvetica.ttc";
+    
+    // Initialize FreeType
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft)) {
+        fprintf(stderr, "Failed to initialize FreeType\n");
+        return -1;
+    }
+    
+    // Load font
+    FT_Face face;
+    if (FT_New_Face(ft, font_path, 0, &face)) {
+        fprintf(stderr, "Failed to load font: %s\n", font_path);
+        fprintf(stderr, "Usage: %s [path/to/font.ttf]\n", argv[0]);
+        FT_Done_FreeType(ft);
+        return -1;
+    }
+    
+    // Set font size
+    FT_Set_Pixel_Sizes(face, 0, 48);
+    
     // Initialize GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
+        FT_Done_Face(face);
+        FT_Done_FreeType(ft);
         return -1;
     }
     
@@ -278,8 +352,17 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
     
-    // Create placeholder texture
-    GLuint texture = create_placeholder_texture();
+    // Load characters for "Hello World!"
+    const char* text = "Hello World!";
+    Character characters[256] = {0};
+    
+    // Load all ASCII characters
+    for (int c = 32; c < 127; c++) {
+        characters[c] = load_character(face, c);
+    }
+    
+    // We'll use the first character's texture for now
+    GLuint texture = characters['H'].texture;
     
     // Get uniform locations
     GLint modelLoc = glGetUniformLocation(shaderProgram, "model");
@@ -340,7 +423,16 @@ int main() {
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
     glDeleteProgram(shaderProgram);
-    glDeleteTextures(1, &texture);
+    
+    // Delete all character textures
+    for (int c = 32; c < 127; c++) {
+        if (characters[c].texture) {
+            glDeleteTextures(1, &characters[c].texture);
+        }
+    }
+    
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
     
     glfwDestroyWindow(window);
     glfwTerminate();

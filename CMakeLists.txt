@@ -48,6 +48,7 @@ find_package(raylib REQUIRED)
 find_package(libuv REQUIRED)
 find_package(flecs REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(Freetype REQUIRED)
 
 # --- Project Sources ---
 # Define the source files for the main executable
