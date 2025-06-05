@@ -227,7 +227,9 @@ phantom_prefab = world.create_entity("PhantomPrefab")
 phantom_prefab.set(Position, {0, 0, 0})
 phantom_prefab.set(Rotation, {0, 0, 0})
 phantom_prefab.set(PhantomSize, {400, 300})
-phantom_prefab.set(PhantomState, {true, false, 0})
+phantom_prefab.set(PhantomId, {generate_id()})
+phantom_prefab.add(Visible)
+phantom_prefab.add(Unfocused)
 phantom_prefab.set(TextContent, {"", 0, 1024})
 
 // Camera prefab
@@ -238,7 +240,7 @@ camera_prefab.set(CameraSettings, {45.0, 0.1, 1000.0})
 
 // Editor prefab (singleton)
 editor_prefab = world.create_entity("EditorPrefab")
-editor_prefab.set(EditorMode, {true, false, false})
+editor_prefab.add(NavigationMode)  // Default mode
 editor_prefab.set(EditorConfig, {"default", 12.0})
 ```
 
@@ -248,14 +250,13 @@ editor_prefab.set(EditorConfig, {"default", 12.0})
 ```pseudo
 entity Editor {
     components: [
-// Editor modes as mutually exclusive tags
-tag NavigationMode
-tag EditMode  
-tag CommandMode
         EditorConfig {
             theme: string
             font_size: float
         }
+    ],
+    tags: [
+        NavigationMode  // Default mode (mutually exclusive with EditMode, CommandMode)
     ]
 }
 ```
