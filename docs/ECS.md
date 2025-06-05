@@ -2,48 +2,94 @@
 
 ## Overview
 
-Pevi uses an Entity Component System (ECS) architecture to manage all objects in the 3D editor space. This document describes the conceptual model and patterns used, independent of any specific ECS implementation.
+Pevi uses Flecs, a high-performance Entity Component System (ECS) framework, to manage all objects in the 3D editor space. This document describes how Pevi leverages Flecs features and follows Flecs design best practices for optimal performance and maintainability.
 
 ## Core Concepts
 
 ### Entities
-Entities are unique identifiers that represent objects in the editor. They have no data or behavior on their own - they're simply IDs that components can be attached to.
+Entities in Flecs are unique identifiers that represent objects in the editor. They can be named for easy lookup and debugging, and support hierarchical organization through the built-in `ChildOf` relationship.
 
 ```pseudo
+// Create entities
 entity = world.create_entity()
-entity2 = world.create_entity("named_entity")
+named_entity = world.create_entity("MainEditor")
+
+// Named entities can be looked up (O(1) performance)
+found = world.lookup("MainEditor")
+
+// Check if entity is still alive (important for stored handles)
+if entity.is_alive() {
+    // Safe to use
+}
 ```
 
-### Components
-Components are data containers that can be attached to entities. They contain only data, no logic.
+### Components - Atomic Design
+Following Flecs best practices, Pevi uses **small, atomic components** rather than large composite ones. This improves cache performance, reduces refactoring, and increases reusability.
 
 ```pseudo
-// Component definitions
+// GOOD: Atomic components
 component Position {
     x: float
     y: float
     z: float
 }
 
-component TextBuffer {
+component Rotation {
+    pitch: float
+    yaw: float
+    roll: float
+}
+
+component Scale {
+    x: float
+    y: float
+    z: float
+}
+
+component TextContent {
     content: string
+    length: size_t
+    capacity: size_t
+}
+
+component FileInfo {
     filepath: string
     is_dirty: boolean
+    last_modified: time_t
 }
 
-component Phantom {
+component PhantomSize {
     width: float
     height: float
+}
+
+component PhantomState {
     is_visible: boolean
     is_focused: boolean
+    phantom_id: int
 }
+
+// AVOID: Large composite components
+// component LargePhantom {
+//     x, y, z, pitch, yaw, roll, scale_x, scale_y, scale_z: float
+//     content, filepath: string
+//     is_dirty, is_visible, is_focused: boolean
+//     width, height: float
+//     phantom_id: int
+// }  // Don't do this - violates atomic design!
 ```
 
+**Benefits of Atomic Components:**
+- **Cache Performance**: Systems only load data they actually need
+- **Minimal Refactoring**: Fewer reasons to change atomic components
+- **Reusability**: Atomic components work across different projects
+- **Query Efficiency**: Cached queries have minimal overhead for multiple components
+
 ### Tags
-Tags are components without data - they're used to mark entities with specific properties or states. Tags are useful for categorization, state tracking, and efficient querying.
+Tags are zero-sized components used for marking entities with specific states. Flecs optimizes tag storage and queries.
 
 ```pseudo
-// Tag definitions (components with no data)
+// Tag definitions
 tag Selected
 tag Hidden
 tag Modified
@@ -51,99 +97,141 @@ tag Focused
 tag Locked
 
 // Using tags
-entity.add_tag(Selected)
-entity.has_tag(Selected)  // returns true
-entity.remove_tag(Selected)
+entity.add(Selected)
+entity.has(Selected)  // returns true
+entity.remove(Selected)
+
+// Tags are efficient for queries
+query = world.query([Position, Selected])  // All selected entities with position
 ```
 
-### Pairs (Relationships)
-Pairs are a powerful ECS concept that allows encoding relationships between entities. A pair consists of two parts: a relationship (first element) and a target/object (second element). This enables modeling complex entity relationships without additional components.
+### Relationships
+Flecs relationships are a powerful feature for modeling entity connections. The two most common are `ChildOf` (hierarchies) and `IsA` (prefabs/inheritance).
 
 ```pseudo
-// Relationship definitions
-relationship ChildOf      // Entity is a child of another entity
+// Built-in relationships
+relationship ChildOf      // Hierarchical parent-child
+relationship IsA          // Prefab inheritance
+
+// Custom relationships
 relationship DependsOn    // Entity depends on another entity
 relationship References   // Entity references another entity
-relationship Likes        // For examples - one entity likes another
+relationship Contains     // For container-like structures
 
-// Using pairs
+// Using relationships
 entity.add_pair(ChildOf, parent_entity)
 entity.add_pair(References, file_entity)
 entity.has_pair(ChildOf, parent_entity)  // returns true
-entity.remove_pair(ChildOf, parent_entity)
 
-// The same component can be added multiple times with different targets
-bob.add_pair(Likes, alice)
-bob.add_pair(Likes, coffee)
-bob.has_pair(Likes, alice)   // true
-bob.has_pair(Likes, coffee)  // true
+// Multiple instances of same relationship
+phantom.add_pair(DependsOn, lib1)
+phantom.add_pair(DependsOn, lib2)  // Can depend on multiple things
 ```
 
-Pairs enable several important patterns:
-- **Hierarchies**: Using ChildOf relationships
-- **Dependencies**: Tracking which entities depend on others
-- **References**: Linking entities to external resources
-- **Graphs**: Building arbitrary relationship graphs between entities
+**When to Use Relationships:**
+- You have a component with an entity handle and need reverse lookups
+- You need multiple instances of the same component on an entity
+- You're designing container structures (like inventories)
+- You want to group entities by layers/cells with efficient lookup
+- You have many similar components that duplicate code
 
-#### Built-in Hierarchy Support
+#### Hierarchies with ChildOf
 
-Many ECS implementations provide built-in support for hierarchies through a special `ChildOf` relationship. This provides powerful automatic features:
+Flecs provides built-in hierarchy support with automatic cleanup and path-based lookups:
 
 ```pseudo
 // Creating hierarchies
-parent = world.create_entity()
-child = world.create_entity_with_pair(ChildOf, parent)
-
-// Alternative: add relationship after creation
-child2 = world.create_entity()
-child2.add_pair(ChildOf, parent)
+parent = world.create_entity("ProjectRoot")
+child = world.create_entity("UIGroup")
+child.add_pair(ChildOf, parent)
 
 // Automatic cleanup - deleting parent deletes all children
-world.delete_entity(parent)  // child and child2 are also deleted!
+world.delete_entity(parent)  // child is also deleted!
+
+// Path-based lookups (O(1) performance with hashmap)
+found = world.lookup("ProjectRoot.UIGroup")
 
 // Hierarchical queries
-query = world.query([Position, ChildOf(parent)])  // All children of parent with Position
-
-// Path-based lookups (if supported)
-grandchild = world.create_entity_with_pair(ChildOf, child)
-path = grandchild.get_path()  // Returns something like "parent.child.grandchild"
+query = world.query([Position, ChildOf(parent)])  // All children with Position
 ```
 
-Benefits of built-in hierarchy support:
-- **Automatic Cleanup**: Children are automatically deleted when parent is deleted
-- **Path Names**: Entities can be looked up by hierarchical paths
-- **Efficient Traversal**: Optimized iteration over parent-child relationships
-- **Cascading Operations**: Operations can cascade down the hierarchy
+### Prefabs
+Flecs prefabs are entity templates that provide default components and values. They're faster than manual initialization and help classify entity types.
+
+```pseudo
+// Create prefab
+phantom_prefab = world.create_entity("PhantomPrefab")
+phantom_prefab.set(Position, {0, 0, 0})
+phantom_prefab.set(PhantomSize, {400, 300})
+phantom_prefab.set(PhantomState, {true, false, 0})
+
+// Create entities from prefab (fast!)
+phantom1 = world.create_entity()
+phantom1.add_pair(IsA, phantom_prefab)  // Inherits all prefab components
+
+// Override specific values
+phantom1.set(Position, {100, 50, 0})  // Override position, keep other defaults
+```
 
 ### Systems
-Systems contain the logic that operates on entities with specific component combinations.
+Systems contain logic that operates on entities with specific component combinations. Flecs systems follow single responsibility principle and use proper scheduling.
 
 ```pseudo
 system UpdatePhantomPositions {
-    // Query for entities with both Position and Phantom components
-    query: [Position, Phantom]
+    // Query with proper access annotations
+    query: [in] Position, [inout] PhantomState
+    phase: OnUpdate  // Explicit phase assignment
     
     update(delta_time) {
         for each entity matching query {
-            position = entity.get(Position)
-            phantom = entity.get(Phantom)
+            position = entity.get(Position)      // Read-only access
+            state = entity.get_mut(PhantomState) // Mutable access
             
-            // Update logic here
-            if phantom.is_visible {
+            if state.is_visible {
                 // Process phantom position
+                update_phantom_display(position, state)
             }
         }
     }
 }
 ```
 
+**System Design Principles:**
+- **Single Responsibility**: Each system does one thing well
+- **Small Systems**: Easier to isolate, optimize, and reuse
+- **Proper Phases**: Use Flecs phase system for ordering
+- **Access Annotations**: Mark components as `in`, `inout`, or `out`
+
 ## Pevi Entity Architecture
+
+### Prefabs for Entity Types
+
+Following Flecs best practices, Pevi uses prefabs to define entity templates:
+
+```pseudo
+// Phantom prefab
+phantom_prefab = world.create_entity("PhantomPrefab")
+phantom_prefab.set(Position, {0, 0, 0})
+phantom_prefab.set(Rotation, {0, 0, 0})
+phantom_prefab.set(PhantomSize, {400, 300})
+phantom_prefab.set(PhantomState, {true, false, 0})
+phantom_prefab.set(TextContent, {"", 0, 1024})
+
+// Camera prefab
+camera_prefab = world.create_entity("CameraPrefab")
+camera_prefab.set(Position, {0, 0, 5})
+camera_prefab.set(Rotation, {0, 0, 0})
+camera_prefab.set(CameraSettings, {45.0, 0.1, 1000.0})
+
+// Editor prefab (singleton)
+editor_prefab = world.create_entity("EditorPrefab")
+editor_prefab.set(EditorMode, {true, false, false})
+editor_prefab.set(EditorConfig, {"default", 12.0})
+```
 
 ### Core Entity Types
 
-#### Editor Entity
-The main editor singleton entity that manages global editor state.
-
+#### Editor Entity (Singleton)
 ```pseudo
 entity Editor {
     components: [
@@ -161,48 +249,32 @@ entity Editor {
 ```
 
 #### Camera Entity
-Represents the 3D camera for navigating the editor space.
-
 ```pseudo
 entity Camera {
     components: [
         Position { x, y, z },
         Rotation { pitch, yaw, roll },
-        Camera {
+        CameraSettings {
             fov: float
             near_plane: float
             far_plane: float
-            target: vec3
         }
     ]
 }
 ```
 
-#### Phantom Entities
-Phantoms are the visual representations of code in 3D space.
-
+#### Phantom Entities (Atomic Components)
 ```pseudo
 entity Phantom {
     components: [
         Position { x, y, z },
         Rotation { pitch, yaw, roll },
-        Phantom {
-            width: float
-            height: float
-            is_visible: boolean
-            is_focused: boolean
-            phantom_id: int
-        },
-        TextBuffer {
-            content: string
-            length: size
-            capacity: size
-            is_dirty: boolean
-            filepath: string  // null if unsaved
-        }
+        PhantomSize { width, height },
+        PhantomState { is_visible, is_focused, phantom_id },
+        TextContent { content, length, capacity },
+        FileInfo { filepath, is_dirty, last_modified }  // Optional
     ],
     tags: [
-        // Possible tags for phantoms
         Selected,    // Currently selected by user
         Modified,    // Has unsaved changes
         Locked,      // Cannot be edited
@@ -254,102 +326,111 @@ Benefits of using pairs for relationships:
 - **Efficient Queries**: Query for all entities with specific relationships
 - **Path-based Access**: Navigate hierarchies using path names (e.g., "UI.Components.Button")
 
-## System Architecture
+## System Architecture with Flecs Phases
 
-### Core Systems
+### Flecs Pipeline Phases
 
-#### Input Processing System
+Pevi uses Flecs' built-in phase system for proper system ordering:
+
 ```pseudo
+// OnLoad: Load input data
+system LoadInput {
+    query: [InputState]
+    phase: OnLoad
+    
+    update() {
+        // Load keyboard/mouse input
+        load_input_events()
+    }
+}
+
+// PostLoad: Process input into high-level actions
 system ProcessInput {
-    query: [EditorMode]
+    query: [in] InputState, [inout] EditorMode
+    phase: PostLoad
     
     update() {
-        mode = get_singleton(EditorMode)
-        
-        if mode.is_navigation {
-            // Process navigation inputs
-            dispatch_event(NavigationInput, input_data)
-        } else if mode.is_edit {
-            // Process edit inputs
-            dispatch_event(EditInput, input_data)
+        // Convert raw input to editor actions
+        process_navigation_input()
+        process_edit_input()
+    }
+}
+
+// PreUpdate: Prepare frame, cleanup
+system PrepareFrame {
+    query: [PhantomState]
+    phase: PreUpdate
+    
+    update() {
+        // Clear previous frame state
+        clear_selection_highlights()
+    }
+}
+
+// OnUpdate: Main game logic (default phase)
+system UpdatePhantoms {
+    query: [inout] PhantomState, [in] TextContent, [in] FileInfo
+    phase: OnUpdate  // Default phase
+    
+    update() {
+        for each phantom {
+            // Update phantom logic
+            update_phantom_state(phantom)
         }
     }
 }
-```
 
-#### Phantom Management System
-```pseudo
-system ManagePhantoms {
-    query: [Phantom, Position, TextBuffer]
-    
-    update() {
-        for each entity matching query {
-            phantom = entity.get(Phantom)
-            buffer = entity.get(TextBuffer)
-            
-            if buffer.is_dirty {
-                // Mark for save
-                dispatch_event(BufferDirty, entity)
-            }
-            
-            if phantom.is_focused {
-                // Update focus visuals
-                update_phantom_appearance(entity)
-            }
-        }
-    }
-}
-```
-
-#### Camera Control System
-```pseudo
 system ControlCamera {
-    query: [Camera, Position, Rotation]
-    singleton_query: [EditorMode]
+    query: [inout] Position, [inout] Rotation, [in] CameraSettings
+    phase: OnUpdate
     
     update(delta_time) {
-        mode = get_singleton(EditorMode)
-        if not mode.is_navigation {
-            return
-        }
-        
-        for each camera matching query {
-            position = camera.get(Position)
-            rotation = camera.get(Rotation)
-            
-            // Apply movement based on input
-            apply_camera_movement(position, rotation, delta_time)
-            
-            // Update view matrix
-            update_view_matrix(camera)
-        }
+        // Camera movement logic
+        apply_camera_controls(delta_time)
     }
 }
-```
 
-#### Text Rendering System
-```pseudo
-system RenderText {
-    query: [Phantom, TextBuffer, Position]
-    singleton_query: [Camera]
+// OnValidate: Validate state after updates
+system ValidatePhantomPositions {
+    query: [inout] Position, [in] PhantomSize
+    phase: OnValidate
+    
+    update() {
+        // Prevent phantom overlap, validate bounds
+        resolve_phantom_collisions()
+    }
+}
+
+// PostUpdate: Apply corrections
+system ApplyPhantomCorrections {
+    query: [inout] Position
+    phase: PostUpdate
+    
+    update() {
+        // Apply position corrections from validation
+        apply_position_corrections()
+    }
+}
+
+// PreStore: Prepare for rendering
+system PrepareRendering {
+    query: [in] Position, [in] Rotation, [out] TransformMatrix
+    phase: PreStore
+    
+    update() {
+        // Calculate transform matrices
+        calculate_world_matrices()
+    }
+}
+
+// OnStore: Render frame
+system RenderPhantoms {
+    query: [in] Position, [in] PhantomState, [in] TextContent, [in] TransformMatrix
+    phase: OnStore
     
     render() {
-        camera = get_singleton_entity(Camera)
-        camera_pos = camera.get(Position)
-        
-        for each phantom matching query {
-            pos = phantom.get(Position)
-            buffer = phantom.get(TextBuffer)
-            phantom_data = phantom.get(Phantom)
-            
-            if phantom_data.is_visible {
-                // Calculate screen position
-                screen_pos = world_to_screen(pos, camera)
-                
-                // Render text content
-                render_text_buffer(buffer, screen_pos, phantom_data)
-            }
-        }
+        // Render all visible phantoms
+        render_phantom_text()
     }
 }
 ```
@@ -386,174 +467,244 @@ system HandlePhantomSelection {
 }
 ```
 
-## Query Patterns
+## Query Patterns with Flecs
+
+### Query Types
+
+Flecs has two query types - use the right one for your use case:
+
+```pseudo
+// Cached queries: expensive to create, cheap to iterate
+// Use for systems and frequently-used queries
+cached_query = world.create_cached_query([Position, PhantomState])
+
+// Uncached queries: fast to create, more expensive to iterate  
+// Use for ad-hoc queries
+uncached_query = world.create_query([Position, PhantomState])
+```
+
+### Access Annotations
+
+Always annotate component access for optimal performance:
+
+```pseudo
+// Read-only access (enables optimizations)
+query = world.query([in] Position, [in] PhantomState)
+
+// Read-write access (default if not specified)
+query = world.query([inout] Position, [in] PhantomState)
+
+// Write-only access (for initialization)
+query = world.query([out] Position, [in] PhantomPrefab)
+
+// Mixed access patterns
+query = world.query([in] Position, [inout] PhantomState, [out] TransformMatrix)
+```
 
 ### Basic Queries
 ```pseudo
-// All entities with Position
-query = world.query([Position])
+// All entities with Position (read-only)
+query = world.query([in] Position)
 
-// All entities with Position AND Velocity
-query = world.query([Position, Velocity])
+// All entities with Position AND PhantomState
+query = world.query([in] Position, [in] PhantomState)
 
 // All entities with Position but NOT Hidden tag
-query = world.query([Position, !Hidden])
+query = world.query([in] Position, !Hidden)
 
-// All entities with Selected tag
-query = world.query([Selected])
-
-// All entities with Position and Selected tag
-query = world.query([Position, Selected])
+// All selected phantoms
+query = world.query([in] Position, Selected)
 ```
 
-### Hierarchical Queries
+### Relationship Queries
 ```pseudo
 // All phantoms that are children of a specific group
-query = world.query([Phantom, ChildOf(group_entity)])
+query = world.query([in] PhantomState, ChildOf(group_entity))
 
 // All top-level phantoms (no parent)
-query = world.query([Phantom, !ChildOf(*)])
+query = world.query([in] PhantomState, !ChildOf(*))
 
 // All entities that reference a specific file
-query = world.query([ReferencesFile(file_entity)])
+query = world.query([References(file_entity)])
 
 // All phantoms that depend on a specific phantom
-query = world.query([Phantom, DependsOn(source_phantom)])
-
-// Complex relationship query - all selected phantoms in a group
-query = world.query([Phantom, Selected, ChildOf(group_entity)])
+query = world.query([in] PhantomState, DependsOn(source_phantom))
 ```
 
-### Singleton Queries
+### Singleton Access
 ```pseudo
-// Access singleton components
-camera_settings = world.get_singleton(CameraSettings)
+// Access singleton components (no query needed)
 editor_mode = world.get_singleton(EditorMode)
+camera_settings = world.get_singleton(CameraSettings)
+
+// Modify singleton
+world.set_singleton(EditorMode, {false, true, false})
 ```
+
+## Modules for Pevi
+
+Following Flecs best practices, Pevi organizes functionality into reusable modules:
+
+### Component Modules
+```pseudo
+// components.phantom - Define phantom-related components
+module ComponentsPhantom {
+    export Position, Rotation, PhantomSize, PhantomState
+    export TextContent, FileInfo
+    export Selected, Hidden, Modified tags
+}
+
+// components.camera - Define camera components  
+module ComponentsCamera {
+    export CameraSettings, CameraTarget
+}
+
+// components.editor - Define editor components
+module ComponentsEditor {
+    export EditorMode, EditorConfig
+}
+```
+
+### System Modules
+```pseudo
+// systems.phantom - Implement phantom behavior
+module SystemsPhantom {
+    import ComponentsPhantom
+    
+    export UpdatePhantoms, ValidatePhantomPositions
+    export RenderPhantoms, HandlePhantomSelection
+}
+
+// systems.camera - Implement camera behavior
+module SystemsCamera {
+    import ComponentsCamera, ComponentsEditor
+    
+    export ControlCamera, UpdateCameraTarget
+}
+
+// systems.input - Handle input processing
+module SystemsInput {
+    import ComponentsEditor
+    
+    export LoadInput, ProcessInput
+}
+```
+
+### Module Benefits
+- **Reusability**: Well-designed modules work across projects
+- **Feature Swapping**: Replace `systems.phantom` with different implementation
+- **No Performance Penalty**: Unused systems remain dormant
+- **Dependency Management**: Modules handle their own dependencies
 
 ## Benefits for Pevi
 
-1. **Modularity**: Each aspect of the editor (phantoms, camera, text editing) is isolated in its own components and systems.
+1. **Atomic Components**: Better cache performance and reduced refactoring
+2. **Prefabs**: Fast entity initialization with default values  
+3. **Proper Phases**: Automatic system ordering without manual dependencies
+4. **Query Optimization**: Cached queries and access annotations for performance
+5. **Modular Design**: Reusable modules enable feature swapping
+6. **Relationships**: Powerful hierarchies and entity connections
+7. **Flecs Features**: Built-in naming, path lookup, and automatic cleanup
 
-2. **Flexibility**: New features can be added by creating new components and systems without modifying existing code.
-
-3. **Performance**: ECS allows efficient iteration over entities with specific component combinations.
-
-4. **Spatial Organization**: The ECS naturally supports Pevi's spatial metaphor - positions, relationships, and hierarchies are first-class concepts.
-
-5. **State Management**: All editor state is explicitly stored in components, making it easy to save/load, undo/redo, or synchronize.
-
-6. **Extensibility**: The component-based architecture makes it straightforward to add new phantom types, visualization modes, or editor features.
-
-7. **Efficient Tagging**: Tags provide a lightweight way to mark entities without the overhead of full components, perfect for states like Selected, Hidden, or Modified.
-
-## Example: Creating a New Phantom
+## Example: Creating Phantoms with Flecs Best Practices
 
 ```pseudo
-function create_phantom(world, x, y, z, content, parent = null, file = null) {
-    // Create entity
+// Setup prefabs first (done once at startup)
+function setup_phantom_prefabs(world) {
+    phantom_prefab = world.create_entity("PhantomPrefab")
+    phantom_prefab.set(Position, {0, 0, 0})
+    phantom_prefab.set(Rotation, {0, 0, 0})
+    phantom_prefab.set(PhantomSize, {400, 300})
+    phantom_prefab.set(PhantomState, {true, false, generate_id()})
+    phantom_prefab.set(TextContent, {"", 0, 1024})
+    
+    return phantom_prefab
+}
+
+// Create phantom using prefab (fast!)
+function create_phantom(world, prefab, x, y, z, content, parent = null, file = null) {
+    // Create from prefab
     phantom = world.create_entity()
+    phantom.add_pair(IsA, prefab)  // Inherit all prefab components
     
-    // Add components
-    phantom.add(Position { x: x, y: y, z: z })
-    phantom.add(Rotation { pitch: 0, yaw: 0, roll: 0 })
-    phantom.add(Phantom {
-        width: 400,
-        height: 300,
-        is_visible: true,
-        is_focused: false,
-        phantom_id: generate_id()
-    })
-    phantom.add(TextBuffer {
-        content: content,
-        length: content.length,
-        capacity: content.length * 2,
-        is_dirty: false,
-        filepath: file ? file.path : null
-    })
+    // Override specific values (atomic components)
+    phantom.set(Position, {x, y, z})
+    if content != "" {
+        phantom.set(TextContent, {content, content.length, content.length * 2})
+        phantom.add(Modified)  // Tag for modified content
+    }
     
-    // Add relationships
+    // Add file info if provided
+    if file != null {
+        phantom.set(FileInfo, {file.path, false, file.last_modified})
+        phantom.add_pair(References, file)
+    }
+    
+    // Add to hierarchy
     if parent != null {
         phantom.add_pair(ChildOf, parent)
     }
     
-    if file != null {
-        phantom.add_pair(ReferencesFile, file)
-    }
-    
-    // Add relevant tags
-    if content != "" {
-        phantom.add_tag(Modified)  // Mark as modified if has content
-    }
-    
-    // Dispatch creation event
-    world.dispatch_event(PhantomCreated { entity: phantom })
-    
     return phantom
 }
 
-// Example: Selecting a phantom
+// Efficient selection using queries
 function select_phantom(world, phantom) {
-    // Remove Selected tag from all phantoms
-    selected_query = world.query([Selected])
+    // Use cached query to clear all selections (efficient)
+    selected_query = world.get_cached_query([Selected])
     for each entity in selected_query {
-        entity.remove_tag(Selected)
+        entity.remove(Selected)
     }
     
-    // Add Selected tag to this phantom
-    phantom.add_tag(Selected)
+    // Select new phantom
+    phantom.add(Selected)
     
-    // Update focus in Phantom component
-    phantom_comp = phantom.get(Phantom)
-    phantom_comp.is_focused = true
+    // Update state atomically
+    state = phantom.get_mut(PhantomState)
+    state.is_focused = true
 }
 
-// Example: Creating a phantom group
-function create_phantom_group(world, name, parent = null) {
-    group = world.create_entity(name)
+// Create hierarchical organization
+function organize_project_phantoms(world, phantom_prefab) {
+    // Create project hierarchy using ChildOf
+    project = world.create_entity("MyProject")
+    project.set(Position, {0, 0, 0})
     
-    // Groups might just have position and a name
-    group.add(Position { x: 0, y: 0, z: 0 })
-    group.add_tag(PhantomGroup)
+    ui_group = world.create_entity("UI")
+    ui_group.add_pair(ChildOf, project)
+    ui_group.set(Position, {100, 0, 0})
     
-    if parent != null {
-        group.add_pair(ChildOf, parent)
-    }
+    backend_group = world.create_entity("Backend")  
+    backend_group.add_pair(ChildOf, project)
+    backend_group.set(Position, {-100, 0, 0})
     
-    return group
+    // Create phantoms in groups (using prefab)
+    button_phantom = create_phantom(world, phantom_prefab, 
+                                  120, 0, 0, "button code", ui_group)
+    api_phantom = create_phantom(world, phantom_prefab,
+                               -120, 0, 0, "api code", backend_group)
+    
+    // Path-based lookup (O(1) performance)
+    found_ui = world.lookup("MyProject.UI")
+    
+    // Automatic cleanup - deleting project removes everything
+    // world.delete_entity(project)  // Cleans up all children!
+    
+    return project
 }
 
-// Example: Finding all phantoms in a group
-function get_phantoms_in_group(world, group) {
-    query = world.query([Phantom, ChildOf(group)])
-    phantoms = []
+// Query patterns for phantom management
+function phantom_queries(world) {
+    // Cached queries for frequent use
+    visible_phantoms = world.create_cached_query([in] Position, [in] PhantomState, !Hidden)
+    selected_phantoms = world.create_cached_query([inout] PhantomState, Selected)
+    dirty_files = world.create_cached_query([in] FileInfo, Modified)
     
-    for each entity in query {
-        phantoms.append(entity)
-    }
+    // Relationship queries
+    ui_phantoms = world.create_cached_query([in] PhantomState, ChildOf(ui_group)])
     
-    return phantoms
-}
-
-// Example: Organizing phantoms hierarchically
-function organize_project_phantoms(world) {
-    // Create main project group
-    project = create_phantom_group(world, "MyProject")
-    
-    // Create subgroups
-    ui_group = create_phantom_group(world, "UI", project)
-    backend_group = create_phantom_group(world, "Backend", project)
-    
-    // Create phantoms in groups
-    button_phantom = create_phantom(world, 100, 0, 0, "button code", ui_group)
-    api_phantom = create_phantom(world, -100, 0, 0, "api code", backend_group)
-    
-    // Path-based access (if supported by ECS)
-    // button_path = "MyProject.UI.button_phantom"
-    
-    // Deleting project group cleans up everything
-    // world.delete_entity(project)  // Deletes all subgroups and phantoms!
+    return {visible_phantoms, selected_phantoms, dirty_files, ui_phantoms}
 }
 ```
 
-This architecture provides a clean separation of concerns while maintaining the flexibility needed for Pevi's innovative 3D code editing approach.
+This Flecs-based architecture provides optimal performance through atomic components, efficient prefab-based creation, proper query design, and leverages Flecs' powerful relationship and hierarchy features for Pevi's 3D code editing approach.
