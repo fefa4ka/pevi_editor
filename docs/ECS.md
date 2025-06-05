@@ -63,11 +63,15 @@ component PhantomSize {
     height: float
 }
 
-component PhantomState {
-    is_visible: boolean
-    is_focused: boolean
-    phantom_id: int
+component PhantomId {
+    id: int
 }
+
+// Boolean states become tags
+tag Visible
+tag Focused
+tag Hidden      // Opposite of Visible
+tag Unfocused   // Opposite of Focused
 
 // AVOID: Large composite components
 // component LargePhantom {
@@ -95,6 +99,15 @@ tag Hidden
 tag Modified
 tag Focused
 tag Locked
+
+// Phantom state tags
+tag Visible
+tag Unfocused
+
+// Editor mode tags (mutually exclusive)
+tag NavigationMode
+tag EditMode
+tag CommandMode
 
 // Using tags
 entity.add(Selected)
@@ -163,7 +176,9 @@ Flecs prefabs are entity templates that provide default components and values. T
 phantom_prefab = world.create_entity("PhantomPrefab")
 phantom_prefab.set(Position, {0, 0, 0})
 phantom_prefab.set(PhantomSize, {400, 300})
-phantom_prefab.set(PhantomState, {true, false, 0})
+phantom_prefab.set(PhantomId, {generate_id()})
+phantom_prefab.add(Visible)    // Default to visible
+phantom_prefab.add(Unfocused)  // Default to unfocused
 
 // Create entities from prefab (fast!)
 phantom1 = world.create_entity()
@@ -179,18 +194,16 @@ Systems contain logic that operates on entities with specific component combinat
 ```pseudo
 system UpdatePhantomPositions {
     // Query with proper access annotations
-    query: [in] Position, [inout] PhantomState
+    query: [in] Position, [in] PhantomId, Visible  // Use tag for visibility check
     phase: OnUpdate  // Explicit phase assignment
     
     update(delta_time) {
         for each entity matching query {
-            position = entity.get(Position)      // Read-only access
-            state = entity.get_mut(PhantomState) // Mutable access
+            position = entity.get(Position)    // Read-only access
+            phantom_id = entity.get(PhantomId) // Read-only access
             
-            if state.is_visible {
-                // Process phantom position
-                update_phantom_display(position, state)
-            }
+            // Only visible phantoms are in this query
+            update_phantom_display(position, phantom_id)
         }
     }
 }
@@ -235,11 +248,10 @@ editor_prefab.set(EditorConfig, {"default", 12.0})
 ```pseudo
 entity Editor {
     components: [
-        EditorMode { 
-            is_navigation: boolean
-            is_edit: boolean
-            is_command: boolean
-        },
+// Editor modes as mutually exclusive tags
+tag NavigationMode
+tag EditMode  
+tag CommandMode
         EditorConfig {
             theme: string
             font_size: float
@@ -270,15 +282,17 @@ entity Phantom {
         Position { x, y, z },
         Rotation { pitch, yaw, roll },
         PhantomSize { width, height },
-        PhantomState { is_visible, is_focused, phantom_id },
+        PhantomId { id },
         TextContent { content, length, capacity },
         FileInfo { filepath, is_dirty, last_modified }  // Optional
     ],
     tags: [
+        Visible,     // Currently visible (default state)
+        Unfocused,   // Not currently focused (default state)
         Selected,    // Currently selected by user
         Modified,    // Has unsaved changes
         Locked,      // Cannot be edited
-        Hidden       // Temporarily hidden from view
+        Hidden       // Temporarily hidden from view (mutually exclusive with Visible)
     ]
 }
 ```
@@ -346,13 +360,20 @@ system LoadInput {
 
 // PostLoad: Process input into high-level actions
 system ProcessInput {
-    query: [in] InputState, [inout] EditorMode
+    query: [in] InputState
+    singleton_query: [EditorConfig]  // Access singleton
     phase: PostLoad
     
     update() {
-        // Convert raw input to editor actions
-        process_navigation_input()
-        process_edit_input()
+        editor = world.get_singleton_entity()
+        
+        if editor.has(NavigationMode) {
+            process_navigation_input()
+        } else if editor.has(EditMode) {
+            process_edit_input()
+        } else if editor.has(CommandMode) {
+            process_command_input()
+        }
     }
 }
 
@@ -369,13 +390,13 @@ system PrepareFrame {
 
 // OnUpdate: Main game logic (default phase)
 system UpdatePhantoms {
-    query: [inout] PhantomState, [in] TextContent, [in] FileInfo
+    query: [in] PhantomId, [in] TextContent, [in] FileInfo, Visible
     phase: OnUpdate  // Default phase
     
     update() {
         for each phantom {
-            // Update phantom logic
-            update_phantom_state(phantom)
+            // Update phantom logic for visible phantoms only
+            update_phantom_logic(phantom)
         }
     }
 }
@@ -392,11 +413,11 @@ system ControlCamera {
 
 // OnValidate: Validate state after updates
 system ValidatePhantomPositions {
-    query: [inout] Position, [in] PhantomSize
+    query: [inout] Position, [in] PhantomSize, Visible
     phase: OnValidate
     
     update() {
-        // Prevent phantom overlap, validate bounds
+        // Prevent phantom overlap, validate bounds for visible phantoms only
         resolve_phantom_collisions()
     }
 }
@@ -425,11 +446,11 @@ system PrepareRendering {
 
 // OnStore: Render frame
 system RenderPhantoms {
-    query: [in] Position, [in] PhantomState, [in] TextContent, [in] TransformMatrix
+    query: [in] Position, [in] PhantomId, [in] TextContent, [in] TransformMatrix, Visible
     phase: OnStore
     
     render() {
-        // Render all visible phantoms
+        // Render all visible phantoms (automatically filtered by Visible tag)
         render_phantom_text()
     }
 }
@@ -506,8 +527,8 @@ query = world.query([in] Position, [inout] PhantomState, [out] TransformMatrix)
 // All entities with Position (read-only)
 query = world.query([in] Position)
 
-// All entities with Position AND PhantomState
-query = world.query([in] Position, [in] PhantomState)
+// All entities with Position AND PhantomId
+query = world.query([in] Position, [in] PhantomId)
 
 // All entities with Position but NOT Hidden tag
 query = world.query([in] Position, !Hidden)
@@ -519,26 +540,31 @@ query = world.query([in] Position, Selected)
 ### Relationship Queries
 ```pseudo
 // All phantoms that are children of a specific group
-query = world.query([in] PhantomState, ChildOf(group_entity))
+query = world.query([in] PhantomId, ChildOf(group_entity))
 
 // All top-level phantoms (no parent)
-query = world.query([in] PhantomState, !ChildOf(*))
+query = world.query([in] PhantomId, !ChildOf(*))
 
 // All entities that reference a specific file
 query = world.query([References(file_entity)])
 
 // All phantoms that depend on a specific phantom
-query = world.query([in] PhantomState, DependsOn(source_phantom))
+query = world.query([in] PhantomId, DependsOn(source_phantom))
 ```
 
 ### Singleton Access
 ```pseudo
 // Access singleton components (no query needed)
-editor_mode = world.get_singleton(EditorMode)
+editor_config = world.get_singleton(EditorConfig)
 camera_settings = world.get_singleton(CameraSettings)
 
-// Modify singleton
-world.set_singleton(EditorMode, {false, true, false})
+// Access singleton entity for tags
+editor = world.get_singleton_entity()
+is_navigation = editor.has(NavigationMode)
+
+// Modify singleton mode (mutually exclusive tags)
+editor.remove(NavigationMode)
+editor.add(EditMode)
 ```
 
 ## Modules for Pevi
@@ -615,7 +641,9 @@ function setup_phantom_prefabs(world) {
     phantom_prefab.set(Position, {0, 0, 0})
     phantom_prefab.set(Rotation, {0, 0, 0})
     phantom_prefab.set(PhantomSize, {400, 300})
-    phantom_prefab.set(PhantomState, {true, false, generate_id()})
+    phantom_prefab.set(PhantomId, {generate_id()})
+    phantom_prefab.add(Visible)
+    phantom_prefab.add(Unfocused)
     phantom_prefab.set(TextContent, {"", 0, 1024})
     
     return phantom_prefab
@@ -633,6 +661,10 @@ function create_phantom(world, prefab, x, y, z, content, parent = null, file = n
         phantom.set(TextContent, {content, content.length, content.length * 2})
         phantom.add(Modified)  // Tag for modified content
     }
+    
+    // Override default state if needed
+    phantom.remove(Unfocused)
+    phantom.add(Focused)  // This phantom starts focused
     
     // Add file info if provided
     if file != null {
@@ -659,9 +691,9 @@ function select_phantom(world, phantom) {
     // Select new phantom
     phantom.add(Selected)
     
-    // Update state atomically
-    state = phantom.get_mut(PhantomState)
-    state.is_focused = true
+    // Update focus state with tags
+    phantom.remove(Unfocused)
+    phantom.add(Focused)
 }
 
 // Create hierarchical organization
@@ -696,12 +728,12 @@ function organize_project_phantoms(world, phantom_prefab) {
 // Query patterns for phantom management
 function phantom_queries(world) {
     // Cached queries for frequent use
-    visible_phantoms = world.create_cached_query([in] Position, [in] PhantomState, !Hidden)
-    selected_phantoms = world.create_cached_query([inout] PhantomState, Selected)
+    visible_phantoms = world.create_cached_query([in] Position, [in] PhantomId, Visible)
+    selected_phantoms = world.create_cached_query([in] PhantomId, Selected)
     dirty_files = world.create_cached_query([in] FileInfo, Modified)
     
     // Relationship queries
-    ui_phantoms = world.create_cached_query([in] PhantomState, ChildOf(ui_group)])
+    ui_phantoms = world.create_cached_query([in] PhantomId, ChildOf(ui_group)])
     
     return {visible_phantoms, selected_phantoms, dirty_files, ui_phantoms}
 }
