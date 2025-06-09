@@ -70,17 +70,12 @@ void RegisterSpatialComponents(ecs_world_t *world) {
     ECS_TAG(world, RenderPhase);
     
     // Set up cleanup hooks for complex components
-    ecs_component(world, {
-        .entity = ecs_id(TextContent),
-        .type.size = sizeof(TextContent),
-        .type.alignment = ECS_ALIGNOF(TextContent),
-        .type.hooks.dtor = TextContent_dtor
+    // Note: Cleanup hooks are set separately since components are already registered
+    ecs_set_hooks(world, TextContent, {
+        .dtor = TextContent_dtor
     });
     
-    ecs_component(world, {
-        .entity = ecs_id(FileReference),
-        .type.size = sizeof(FileReference),
-        .type.alignment = ECS_ALIGNOF(FileReference),
-        .type.hooks.dtor = FileReference_dtor
+    ecs_set_hooks(world, FileReference, {
+        .dtor = FileReference_dtor
     });
 }
