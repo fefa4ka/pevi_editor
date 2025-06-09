@@ -13,6 +13,9 @@
 - [x] Test basic window creation and rendering
 - [x] Fix missing flecs_pevi_basic.c example
 - [x] Verify all dependencies are working (Raylib, Flecs, JoltC, etc.)
+- [x] Create LLDB debugging demonstration
+- [x] Add debugging examples and documentation
+- [x] Test LLDB with ECS entity examination
 
 ## Build Progress
 - ✅ Project builds successfully with CMake
