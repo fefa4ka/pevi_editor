@@ -28,7 +28,7 @@ typedef struct {
     Matrix world_matrix;
     Matrix local_matrix;
     bool needs_update;
-} Transform;
+} EcsTransform;
 
 // 3D text phantom entity components
 typedef struct {
@@ -83,6 +83,7 @@ extern ECS_DECLARE(NeedsReload);
 extern ECS_DECLARE(References);
 extern ECS_DECLARE(Contains);
 extern ECS_DECLARE(Imports);
+extern ECS_DECLARE(Includes);
 extern ECS_DECLARE(Targets);
 
 // Pipeline phases
@@ -90,6 +91,19 @@ extern ECS_DECLARE(InputPhase);
 extern ECS_DECLARE(TransformPhase);
 extern ECS_DECLARE(CullingPhase);
 extern ECS_DECLARE(RenderPhase);
+
+// Declare components for external use
+ECS_COMPONENT_DECLARE(Position);
+ECS_COMPONENT_DECLARE(Rotation);
+ECS_COMPONENT_DECLARE(Scale);
+ECS_COMPONENT_DECLARE(Velocity);
+ECS_COMPONENT_DECLARE(EcsTransform);
+ECS_COMPONENT_DECLARE(TextContent);
+ECS_COMPONENT_DECLARE(FileReference);
+ECS_COMPONENT_DECLARE(Selected);
+ECS_COMPONENT_DECLARE(BoundingSphere);
+ECS_COMPONENT_DECLARE(CameraController);
+ECS_COMPONENT_DECLARE(EditorState);
 
 // Component registration function
 void RegisterSpatialComponents(ecs_world_t *world);

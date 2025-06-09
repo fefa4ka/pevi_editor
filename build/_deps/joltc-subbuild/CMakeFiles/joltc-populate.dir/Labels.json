@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/CMakeFiles/joltc-populate"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/CMakeFiles/joltc-populate.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/CMakeFiles/joltc-populate-complete.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-build.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-configure.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-download.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-install.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-mkdir.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-patch.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-test.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-subbuild/joltc-populate-prefix/src/joltc-populate-stamp/joltc-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"joltc-populate"
+		],
+		"name" : "joltc-populate"
+	}
+}

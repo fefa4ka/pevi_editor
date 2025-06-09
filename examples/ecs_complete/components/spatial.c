@@ -8,6 +8,7 @@ ECS_DECLARE(NeedsReload);
 ECS_DECLARE(References);
 ECS_DECLARE(Contains);
 ECS_DECLARE(Imports);
+ECS_DECLARE(Includes);
 ECS_DECLARE(Targets);
 
 ECS_DECLARE(InputPhase);
@@ -38,7 +39,7 @@ void RegisterSpatialComponents(ecs_world_t *world) {
     ECS_COMPONENT(world, Rotation);
     ECS_COMPONENT(world, Scale);
     ECS_COMPONENT(world, Velocity);
-    ECS_COMPONENT(world, Transform);
+    ECS_COMPONENT(world, EcsTransform);
     
     // Register phantom-specific components
     ECS_COMPONENT(world, TextContent);
@@ -59,6 +60,7 @@ void RegisterSpatialComponents(ecs_world_t *world) {
     ECS_TAG(world, References);
     ECS_TAG(world, Contains);
     ECS_TAG(world, Imports);
+    ECS_TAG(world, Includes);
     ECS_TAG(world, Targets);
     
     // Register pipeline phases

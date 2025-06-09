@@ -1,0 +1,8 @@
+arm64-osx/
+arm64-osx/include/
+arm64-osx/include/qoi.h
+arm64-osx/share/
+arm64-osx/share/qoi/
+arm64-osx/share/qoi/copyright
+arm64-osx/share/qoi/vcpkg.spdx.json
+arm64-osx/share/qoi/vcpkg_abi_info.txt

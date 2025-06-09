@@ -23,6 +23,7 @@ int main(void) {
     // Register all components and tags
     RegisterSpatialComponents(world);
     
+    
     // Register core systems with pipeline phases
     RegisterCoreSystems(world);
     
@@ -99,9 +100,10 @@ int main(void) {
         ClearBackground(BLACK);
         
         // Set up 3D camera from camera controller
-        CameraController *cam_ctrl = ecs_get(world, camera_entity, CameraController);
+        const CameraController *cam_ctrl = ecs_get(world, camera_entity, CameraController);
         if (cam_ctrl) {
-            Camera3D camera = CreateCamera(cam_ctrl);
+            CameraController cam_ctrl_copy = *cam_ctrl;
+            Camera3D camera = CreateCamera(&cam_ctrl_copy);
             
             BeginMode3D(camera);
             
@@ -117,9 +119,9 @@ int main(void) {
             // But we can also draw additional 3D elements here
             
             // Draw selection indicators for focused entities
-            EditorState *editor_state = ecs_get(world, editor, EditorState);
-            if (editor_state && editor_state->focused_entity != 0) {
-                Position *pos = ecs_get(world, editor_state->focused_entity, Position);
+            const EditorState *editor_state_inner = ecs_get(world, editor, EditorState);
+            if (editor_state_inner && editor_state_inner->focused_entity != 0) {
+                const Position *pos = ecs_get(world, editor_state_inner->focused_entity, Position);
                 if (pos) {
                     Vector3 entity_pos = {pos->x, pos->y, pos->z};
                     DrawSphere(entity_pos, 0.8f, ColorAlpha(YELLOW, 0.3f));
@@ -131,7 +133,7 @@ int main(void) {
         }
         
         // Draw 2D UI overlay
-        EditorState *editor_state = ecs_get(world, editor, EditorState);
+        const EditorState *editor_state = ecs_get(world, editor, EditorState);
         if (editor_state) {
             const char* mode_names[] = {"Navigation", "Edit", "Command"};
             const Color mode_colors[] = {SKYBLUE, GREEN, ORANGE};
@@ -149,7 +151,7 @@ int main(void) {
                     DrawText(TextFormat("Name: %s", entity_name), 10, 65, 16, WHITE);
                 }
                 
-                TextContent *text = ecs_get(world, editor_state->focused_entity, TextContent);
+                const TextContent *text = ecs_get(world, editor_state->focused_entity, TextContent);
                 if (text) {
                     DrawText(TextFormat("Text: \"%.30s%s\"", text->text, 
                             strlen(text->text) > 30 ? "..." : ""), 10, 85, 16, LIGHTGRAY);
@@ -185,9 +187,13 @@ int main(void) {
         
         // Mode transition feedback
         if (editor_state && editor_state->mode_transition) {
+            const Color mode_colors[] = {SKYBLUE, GREEN, ORANGE};
             DrawText("MODE SWITCHED!", GetScreenWidth() / 2 - 100, GetScreenHeight() / 2, 30, mode_colors[editor_state->current_mode]);
             // Reset transition flag after showing feedback
-            editor_state->mode_transition = false;
+            EditorState *mutable_state = ecs_get_mut(world, editor, EditorState);
+            if (mutable_state) {
+                mutable_state->mode_transition = false;
+            }
         }
         
         EndDrawing();

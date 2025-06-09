@@ -26,11 +26,9 @@ ECS_COMPONENT_DECLARE(CameraController);
 
 // Simple 3D text drawing
 void DrawText3DSimple(const char *text, Vector3 position, float fontSize, Color color) {
-    // For this demo, just draw text at fixed screen positions
-    // In a real implementation, you'd project 3D to screen coordinates
-    static int text_index = 0;
-    DrawText(text, 20, 100 + (text_index++ * 30), (int)fontSize, color);
-    if (text_index > 10) text_index = 0; // Reset counter
+    // Use the Y position to determine stable screen placement
+    int screen_y = 100 + (int)((4.0f - position.y) / 2.0f * 30.0f);
+    DrawText(text, 20, screen_y, (int)fontSize, color);
 }
 
 // Get camera position from controller

@@ -1,0 +1,14 @@
+# Target labels
+ msdfgen-populate
+# Source files and their labels
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/CMakeFiles/msdfgen-populate
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/CMakeFiles/msdfgen-populate.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/CMakeFiles/msdfgen-populate-complete.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-build.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-configure.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-download.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-install.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-mkdir.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-patch.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-test.rule
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/msdfgen-subbuild/msdfgen-populate-prefix/src/msdfgen-populate-stamp/msdfgen-populate-update.rule

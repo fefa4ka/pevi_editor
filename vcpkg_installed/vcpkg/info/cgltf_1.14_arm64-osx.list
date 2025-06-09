@@ -1,0 +1,9 @@
+arm64-osx/
+arm64-osx/include/
+arm64-osx/include/cgltf.h
+arm64-osx/include/cgltf_write.h
+arm64-osx/share/
+arm64-osx/share/cgltf/
+arm64-osx/share/cgltf/copyright
+arm64-osx/share/cgltf/vcpkg.spdx.json
+arm64-osx/share/cgltf/vcpkg_abi_info.txt

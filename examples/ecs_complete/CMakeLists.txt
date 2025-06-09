@@ -16,10 +16,15 @@ file(GLOB_RECURSE SOURCES
     "systems/*.c"
 )
 
-# Create executable
+# Create both executables
 add_executable(spatial_editor 
     main.c
     ${SOURCES}
+)
+
+# Create simple demo executable
+add_executable(spatial_editor_simple 
+    simple_main.c
 )
 
 # Set up include directories
@@ -29,19 +34,39 @@ target_include_directories(spatial_editor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/systems
 )
 
+target_include_directories(spatial_editor_simple PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 # Link libraries
 target_link_libraries(spatial_editor PRIVATE 
     raylib
     flecs::flecs_static
+    glfw
+)
+
+target_link_libraries(spatial_editor_simple PRIVATE 
+    raylib
+    flecs::flecs_static
+    glfw
 )
 
 # Platform-specific settings
 if(WIN32)
     target_link_libraries(spatial_editor PRIVATE winmm)
+    target_link_libraries(spatial_editor_simple PRIVATE winmm)
 elseif(UNIX AND NOT APPLE)
     target_link_libraries(spatial_editor PRIVATE m pthread dl)
+    target_link_libraries(spatial_editor_simple PRIVATE m pthread dl)
 elseif(APPLE)
     target_link_libraries(spatial_editor PRIVATE 
+        "-framework CoreVideo"
+        "-framework IOKit"
+        "-framework Cocoa"
+        "-framework GLUT"
+        "-framework OpenGL"
+    )
+    target_link_libraries(spatial_editor_simple PRIVATE 
         "-framework CoreVideo"
         "-framework IOKit"
         "-framework Cocoa"
@@ -52,6 +77,11 @@ endif()
 
 # Compiler flags for optimization and warnings
 target_compile_options(spatial_editor PRIVATE
+    $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
+    $<$<CONFIG:Release>:-O3 -DNDEBUG>
+)
+
+target_compile_options(spatial_editor_simple PRIVATE
     $<$<CONFIG:Debug>:-g -O0 -Wall -Wextra -Wpedantic>
     $<$<CONFIG:Release>:-O3 -DNDEBUG>
 )

@@ -1,0 +1,10 @@
+arm64-osx/
+arm64-osx/include/
+arm64-osx/include/dr_flac.h
+arm64-osx/include/dr_mp3.h
+arm64-osx/include/dr_wav.h
+arm64-osx/share/
+arm64-osx/share/drlibs/
+arm64-osx/share/drlibs/copyright
+arm64-osx/share/drlibs/vcpkg.spdx.json
+arm64-osx/share/drlibs/vcpkg_abi_info.txt

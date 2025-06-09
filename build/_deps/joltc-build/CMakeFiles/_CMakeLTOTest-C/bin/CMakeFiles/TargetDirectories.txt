@@ -1,0 +1,4 @@
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-build/CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/foo.dir
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-build/CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/boo.dir
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-build/CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/edit_cache.dir
+/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/joltc-build/CMakeFiles/_CMakeLTOTest-C/bin/CMakeFiles/rebuild_cache.dir

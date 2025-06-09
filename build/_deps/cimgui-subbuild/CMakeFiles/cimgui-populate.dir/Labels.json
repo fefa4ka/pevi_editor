@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/cimgui-populate"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/cimgui-populate.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/cimgui-populate-complete.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-build.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-configure.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-download.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-install.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-mkdir.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-patch.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-test.rule"
+		},
+		{
+			"file" : "/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/cimgui-populate-prefix/src/cimgui-populate-stamp/cimgui-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"cimgui-populate"
+		],
+		"name" : "cimgui-populate"
+	}
+}
