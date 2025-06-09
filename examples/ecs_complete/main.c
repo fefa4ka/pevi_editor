@@ -55,7 +55,7 @@ int main(void) {
     
     // Create editor state singleton
     ecs_entity_t editor = ecs_new(world);
-    ecs_set_name(world, editor, "EditorState");
+    ecs_set_name(world, editor, "Editor");
     ecs_set(world, editor, EditorState, {
         .current_mode = 0,  // Start in navigation mode
         .previous_mode = 0,
