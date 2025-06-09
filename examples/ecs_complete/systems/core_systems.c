@@ -53,11 +53,14 @@ void InputSystem(ecs_iter_t *it) {
     float wheel = GetMouseWheelMove();
     
     if (editor_state->current_mode == 0) { // Navigation mode
+        bool input_handled = false;
+        
         if (left_mouse) {
             // Orbital rotation
             camera->yaw += mouse_delta.x * camera->rotation_speed;
             camera->pitch -= mouse_delta.y * camera->rotation_speed;
             camera->pitch = Clamp(camera->pitch, -89.0f, 89.0f);
+            input_handled = true;
         }
         
         if (right_mouse) {
@@ -71,11 +74,22 @@ void InputSystem(ecs_iter_t *it) {
                 Vector3Scale(right, -mouse_delta.x * 0.01f));
             camera->target = Vector3Add(camera->target, 
                 Vector3Scale(up, mouse_delta.y * 0.01f));
+            input_handled = true;
         }
         
-        // Zoom with mouse wheel
-        camera->distance -= wheel * 2.0f;
-        camera->distance = Clamp(camera->distance, 1.0f, 100.0f);
+        if (fabs(wheel) > 0.001f) {
+            // Zoom with mouse wheel
+            camera->distance -= wheel * 2.0f;
+            camera->distance = Clamp(camera->distance, 1.0f, 100.0f);
+            input_handled = true;
+        }
+        
+        // Only print debug info occasionally to avoid spam
+        static int input_counter = 0;
+        if (input_handled && (input_counter++ % 30 == 0)) {
+            printf("Camera updated: yaw=%.1f, pitch=%.1f, distance=%.1f\n", 
+                   camera->yaw, camera->pitch, camera->distance);
+        }
     }
     
     // Mode switching
