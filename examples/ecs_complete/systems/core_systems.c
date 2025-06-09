@@ -29,22 +29,38 @@ void DrawText3D(Font font, const char *text, Vector3 position, float fontSize, f
 
 // Input system for 3D navigation and selection - uses singleton queries
 void InputSystem(ecs_iter_t *it) {
-    // Get singleton entities for editor and camera
-    ecs_entity_t editor_entity = ecs_lookup(it->world, "Editor");
-    ecs_entity_t camera_entity = ecs_lookup(it->world, "MainCamera");
+    // Add debug output to confirm system is running
+    static int call_count = 0;
+    call_count++;
     
-    if (editor_entity == 0 || camera_entity == 0) {
-        printf("Warning: Could not find Editor or MainCamera entities\n");
-        return;
+    // Print debug info occasionally
+    if (call_count % 60 == 1) {
+        printf("InputSystem called (frame %d), entities in query: %d\n", call_count, it->count);
     }
     
-    EditorState *editor_state = ecs_get_mut(it->world, editor_entity, EditorState);
-    CameraController *camera = ecs_get_mut(it->world, camera_entity, CameraController);
-    
-    if (!editor_state || !camera) {
-        printf("Warning: Could not get EditorState or CameraController components\n");
-        return;
-    }
+    // Process each entity in the query (should be just the Editor entity)
+    for (int i = 0; i < it->count; i++) {
+        ecs_entity_t editor_entity = it->entities[i];
+        
+        // Get singleton entities for editor and camera
+        ecs_entity_t camera_entity = ecs_lookup(it->world, "MainCamera");
+        
+        if (camera_entity == 0) {
+            if (call_count < 10) {
+                printf("Warning: Could not find MainCamera entity\n");
+            }
+            continue;
+        }
+        
+        EditorState *editor_state = ecs_get_mut(it->world, editor_entity, EditorState);
+        CameraController *camera = ecs_get_mut(it->world, camera_entity, CameraController);
+        
+        if (!editor_state || !camera) {
+            if (call_count < 10) {
+                printf("Warning: Could not get EditorState or CameraController components\n");
+            }
+            continue;
+        }
     
     // Handle mouse input for camera control
     Vector2 mouse_delta = GetMouseDelta();
@@ -92,13 +108,14 @@ void InputSystem(ecs_iter_t *it) {
         }
     }
     
-    // Mode switching
-    if (IsKeyPressed(KEY_TAB)) {
-        editor_state->previous_mode = editor_state->current_mode;
-        editor_state->current_mode = (editor_state->current_mode + 1) % 3;
-        editor_state->mode_transition = true;
-        printf("Switched to mode: %d\n", editor_state->current_mode);
-    }
+        // Mode switching
+        if (IsKeyPressed(KEY_TAB)) {
+            editor_state->previous_mode = editor_state->current_mode;
+            editor_state->current_mode = (editor_state->current_mode + 1) % 3;
+            editor_state->mode_transition = true;
+            printf("Switched to mode: %d\n", editor_state->current_mode);
+        }
+    } // End of for loop processing EditorState entities
 }
 
 // Transform computation system with hierarchical support
@@ -272,18 +289,25 @@ Camera3D CreateCamera(CameraController *camera_ctrl) {
 
 // Register all core systems
 void RegisterCoreSystems(ecs_world_t *world) {
-    // Register systems - InputSystem and PickingSystem run as singletons
+    // Register InputSystem to run on EditorState entities
     ecs_entity_t input_system = ecs_system(world, {
         .entity = ecs_entity(world, {
             .name = "InputSystem"
         }),
+        .query.terms = {
+            {ecs_id(EditorState)}
+        },
         .callback = InputSystem
     });
     
+    // Register PickingSystem to run on EditorState entities
     ecs_entity_t picking_system = ecs_system(world, {
         .entity = ecs_entity(world, {
             .name = "PickingSystem"
         }),
+        .query.terms = {
+            {ecs_id(EditorState)}
+        },
         .callback = PickingSystem
     });
     

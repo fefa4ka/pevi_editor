@@ -21,24 +21,39 @@ int main(void) {
     printf("Initializing Pevi ECS Complete Example...\n");
     
     // Register all components and tags
+    printf("Registering components...\n");
     RegisterSpatialComponents(world);
+    printf("Components registered.\n");
     
     
     // Register core systems with pipeline phases
+    printf("Registering core systems...\n");
     RegisterCoreSystems(world);
+    printf("Core systems registered.\n");
     
     // Register observers for reactive behavior
+    printf("Registering observers...\n");
     RegisterObservers(world);
+    printf("Observers registered.\n");
     
     // Create prefabs for code editor elements
+    printf("Creating prefabs...\n");
     CreatePrefabs(world);
+    printf("Prefabs created.\n");
     
     // Load example project files as phantoms
+    printf("Loading project files...\n");
     LoadProjectAsPhantoms(world, "./src");
+    printf("Project files loaded.\n");
     
     // Create additional code hierarchy examples
+    printf("Creating code hierarchy...\n");
     CreateCodeHierarchy(world);
+    printf("Code hierarchy created.\n");
+    
+    printf("Setting up dependencies...\n");
     SetupCodeDependencies(world);
+    printf("Dependencies set up.\n");
     
     // Create camera entity with orbital controller
     ecs_entity_t camera_entity = ecs_new(world);
