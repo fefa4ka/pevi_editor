@@ -37,7 +37,8 @@ int main() {
     ECS_SYSTEM(world, move_system, EcsOnUpdate, Position, Velocity);
     
     // Create an entity with position and velocity
-    ecs_entity_t e = ecs_new_entity(world, "MyEntity");
+    ecs_entity_t e = ecs_new(world);
+    ecs_set_name(world, e, "MyEntity");
     ecs_set(world, e, Position, {0, 0, 0});
     ecs_set(world, e, Velocity, {1, 2, 3});
     
