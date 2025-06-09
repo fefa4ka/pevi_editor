@@ -5,8 +5,8 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 
 ## Key Development Info
 - **Entry Point**: `src/main.c` (currently minimal Raylib window)
-- **Build**: `cmake -B build && cmake --build build && ./build/editor`
-- **Current State**: Project structure complete, ready for ECS implementation
+- **Build**: `cmake --build build && ./build/editor`
+- **Current State**: ✅ **BUILD SUCCESSFUL** - All dependencies working, ready for ECS implementation
 
 ## Naming Conventions
 
