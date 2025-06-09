@@ -35,21 +35,21 @@ void FileReference_dtor(void *ptr, int32_t count, const ecs_type_info_t *ti) {
 
 void RegisterSpatialComponents(ecs_world_t *world) {
     // Register atomic spatial components
-    ECS_COMPONENT(world, Position);
-    ECS_COMPONENT(world, Rotation);
-    ECS_COMPONENT(world, Scale);
-    ECS_COMPONENT(world, Velocity);
-    ECS_COMPONENT(world, EcsTransform);
+    ECS_COMPONENT_DEFINE(world, Position);
+    ECS_COMPONENT_DEFINE(world, Rotation);
+    ECS_COMPONENT_DEFINE(world, Scale);
+    ECS_COMPONENT_DEFINE(world, Velocity);
+    ECS_COMPONENT_DEFINE(world, EcsTransform);
     
     // Register phantom-specific components
-    ECS_COMPONENT(world, TextContent);
-    ECS_COMPONENT(world, FileReference);
-    ECS_COMPONENT(world, Selected);
-    ECS_COMPONENT(world, BoundingSphere);
+    ECS_COMPONENT_DEFINE(world, TextContent);
+    ECS_COMPONENT_DEFINE(world, FileReference);
+    ECS_COMPONENT_DEFINE(world, Selected);
+    ECS_COMPONENT_DEFINE(world, BoundingSphere);
     
     // Register camera and editor components
-    ECS_COMPONENT(world, CameraController);
-    ECS_COMPONENT(world, EditorState);
+    ECS_COMPONENT_DEFINE(world, CameraController);
+    ECS_COMPONENT_DEFINE(world, EditorState);
     
     // Register tags
     ECS_TAG(world, Visible);
