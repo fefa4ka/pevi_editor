@@ -10,7 +10,7 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 
 ## ECS Examples Status
 - ✅ `build/examples/ecs_complete/spatial_editor_simple` - Simple ECS demo works
-- ✅ `build/examples/ecs_complete/spatial_editor` - **FIXED!** Complete ECS example now runs successfully
+- ✅ `build/examples/ecs_complete/spatial_editor` - **FULLY FIXED!** Complete ECS example now runs successfully with navigation and input working
 - ✅ `build/editor` - Main editor executable builds and runs (basic Raylib window)
 
 ## Recent Fixes Applied
@@ -20,6 +20,9 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 - ✅ Fixed component hook conflicts by using ecs_set_hooks instead of ecs_component
 - ✅ Fixed entity naming conflict by renaming "EditorState" entity to "Editor"
 - ✅ Resolved "observer must have at least one term" error completely
+- ✅ **NEW**: Fixed InputSystem and PickingSystem query mismatch - systems now use singleton pattern to access Editor and MainCamera entities
+- ✅ **NEW**: Fixed system registration and removed problematic pipeline phases
+- ✅ **NEW**: Navigation, camera control, and input now working properly in spatial_editor example
 
 ## ECS Development Guidelines
 

@@ -2,6 +2,9 @@
 
 ## Current Priority Issues
 ✅ **COMPLETED**: Fixed observer registration error that was crashing the ECS complete example
+✅ **COMPLETED**: Fixed InputSystem and PickingSystem to properly access singleton entities
+✅ **COMPLETED**: Fixed system registration and pipeline dependency issues
+✅ **COMPLETED**: Navigation, control, and input now working in spatial_editor example
 
 ## Recently Completed Tasks
 - ✅ **Fixed observer registration syntax**: Replaced compound literal with explicit descriptor initialization 
@@ -10,6 +13,9 @@
 - ✅ **Fixed component hook conflicts**: Replaced ecs_component() with ecs_set_hooks()
 - ✅ **Fixed entity naming conflict**: Renamed "EditorState" entity to "Editor"
 - ✅ **Verified all ECS examples work**: Both simple and complete examples now run successfully
+- ✅ **Fixed InputSystem query mismatch**: Systems now use singleton pattern with ecs_lookup() to access separate entities
+- ✅ **Fixed system registration issues**: Simplified system registration to avoid complex pipeline phase problems
+- ✅ **Resolved all compilation errors**: Fixed const qualifiers, unused variables, and system dependencies
 
 ## Medium Priority  
 - [ ] **Complete camera controller implementation**: Add smooth camera transitions and constraints
