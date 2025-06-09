@@ -49,6 +49,9 @@ else()
     )
 endif()
 
+# Add the comprehensive ECS complete example subdirectory
+add_subdirectory(ecs_complete)
+
 # Set common properties for examples
 set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic msdf_text_3d PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
