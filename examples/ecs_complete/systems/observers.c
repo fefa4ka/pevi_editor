@@ -72,16 +72,17 @@ void OnFileModified(ecs_iter_t *it) {
 // Register observers
 void RegisterObservers(ecs_world_t *world) {
     // Selection change observer
-    ecs_observer(world, {
-        .query.terms = {{ ecs_id(Selected) }},
-        .events = { EcsOnSet },
-        .callback = OnSelectionChanged
-    });
+    ecs_observer_desc_t selection_observer_desc = {0};
+    selection_observer_desc.query.terms[0].id = ecs_id(Selected);
+    selection_observer_desc.events[0] = EcsOnSet;
+    selection_observer_desc.callback = OnSelectionChanged;
+    ecs_observer_init(world, &selection_observer_desc);
     
-    // File modification observer
-    ecs_observer(world, {
-        .query.terms = {{ ecs_id(FileReference) }},
-        .events = { EcsOnAdd, EcsOnSet },
-        .callback = OnFileModified
-    });
+    // File modification observer  
+    ecs_observer_desc_t file_observer_desc = {0};
+    file_observer_desc.query.terms[0].id = ecs_id(FileReference);
+    file_observer_desc.events[0] = EcsOnAdd;
+    file_observer_desc.events[1] = EcsOnSet;
+    file_observer_desc.callback = OnFileModified;
+    ecs_observer_init(world, &file_observer_desc);
 }
