@@ -185,7 +185,7 @@ void PickingSystem(ecs_iter_t *it) {
     }
     
     EditorState *editor_state = ecs_get_mut(it->world, editor_entity, EditorState);
-    CameraController *camera_ctrl = ecs_get(it->world, camera_entity, CameraController);
+    const CameraController *camera_ctrl = ecs_get(it->world, camera_entity, CameraController);
     
     if (!editor_state || !camera_ctrl) {
         return; // Silently return if components not found
@@ -201,7 +201,7 @@ void PickingSystem(ecs_iter_t *it) {
         Ray picking_ray = GetMouseRay(mouse_pos, camera);
         
         // Find closest intersection with phantom entities
-        float closest_distance = FLT_MAX;
+        float closest_distance __attribute__((unused)) = FLT_MAX;
         ecs_entity_t closest_entity = 0;
         
         // Simplified selection - just select a dummy entity for now
@@ -258,36 +258,17 @@ Camera3D CreateCamera(CameraController *camera_ctrl) {
 
 // Register all core systems
 void RegisterCoreSystems(ecs_world_t *world) {
-    // Create pipeline phases
-    ecs_entity_t input_phase = ecs_new_id(world);
-    ecs_set_name(world, input_phase, "InputPhase");
-    ecs_add_pair(world, input_phase, EcsDependsOn, EcsOnUpdate);
-    
-    ecs_entity_t transform_phase = ecs_new_id(world);
-    ecs_set_name(world, transform_phase, "TransformPhase");
-    ecs_add_pair(world, transform_phase, EcsDependsOn, input_phase);
-    
-    ecs_entity_t culling_phase = ecs_new_id(world);
-    ecs_set_name(world, culling_phase, "CullingPhase");
-    ecs_add_pair(world, culling_phase, EcsDependsOn, transform_phase);
-    
-    ecs_entity_t render_phase = ecs_new_id(world);
-    ecs_set_name(world, render_phase, "RenderPhase");
-    ecs_add_pair(world, render_phase, EcsDependsOn, culling_phase);
-    
     // Register systems - InputSystem and PickingSystem run as singletons
-    ecs_system(world, {
+    ecs_entity_t input_system = ecs_system(world, {
         .entity = ecs_entity(world, {
-            .name = "InputSystem",
-            .add = ecs_ids(ecs_pair(EcsDependsOn, EcsOnUpdate))
+            .name = "InputSystem"
         }),
         .callback = InputSystem
     });
     
-    ecs_system(world, {
+    ecs_entity_t picking_system = ecs_system(world, {
         .entity = ecs_entity(world, {
-            .name = "PickingSystem",
-            .add = ecs_ids(ecs_pair(EcsDependsOn, EcsOnUpdate))
+            .name = "PickingSystem"
         }),
         .callback = PickingSystem
     });
@@ -299,8 +280,8 @@ void RegisterCoreSystems(ecs_world_t *world) {
     ECS_SYSTEM(world, HotReloadSystem, EcsOnUpdate, FileReference);
     
     // Set up dependencies to ensure proper execution order
-    ecs_add_pair(world, ecs_id(TransformSystem), EcsDependsOn, ecs_id(InputSystem));
+    ecs_add_pair(world, ecs_id(TransformSystem), EcsDependsOn, input_system);
     ecs_add_pair(world, ecs_id(CullingSystem), EcsDependsOn, ecs_id(TransformSystem));
     ecs_add_pair(world, ecs_id(TextRenderSystem), EcsDependsOn, ecs_id(CullingSystem));
-    ecs_add_pair(world, ecs_id(PickingSystem), EcsDependsOn, ecs_id(InputSystem));
+    ecs_add_pair(world, picking_system, EcsDependsOn, input_system);
 }
