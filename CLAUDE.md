@@ -138,6 +138,61 @@ void camera_settings_apply(CameraSettings settings);
 4. Use atomic components and proper query design
 5. Maintain clear separation between layers
 
+## Debugging with LLDB
+
+### Available Examples for Debugging
+- `build/examples/flecs_basic_entity_component` - Basic ECS entity creation
+- `build/examples/raylib_example` - Basic Raylib window example
+- `build/editor` - Main editor executable
+- `debug_demo` - Custom debugging demo with entities and components
+
+### Basic LLDB Commands
+```bash
+# Start LLDB and load program
+lldb build/examples/flecs_basic_entity_component
+
+# Set breakpoints
+(lldb) breakpoint set --name main
+(lldb) breakpoint set --file main.c --line 20
+
+# Run and step through
+(lldb) run
+(lldb) next     # Step over
+(lldb) step     # Step into
+(lldb) continue # Continue execution
+
+# Examine variables and memory
+(lldb) frame variable          # Show local variables
+(lldb) print variable_name     # Print specific variable
+(lldb) print *struct_pointer   # Examine struct contents
+
+# Call stack and threads
+(lldb) backtrace              # Show call stack
+(lldb) thread list            # List all threads
+(lldb) frame select 0         # Select stack frame
+
+# Memory examination
+(lldb) memory read address    # Examine memory
+(lldb) disassemble           # Show assembly code
+(lldb) register read         # Show CPU registers
+
+# Watchpoints
+(lldb) watchpoint set variable var_name  # Watch for changes
+
+# Advanced
+(lldb) expression expr       # Evaluate expressions
+(lldb) process info         # Process information
+```
+
+### Debugging Workflow Example
+1. Compile with debug symbols: `gcc -g -o program source.c`
+2. Load in LLDB: `lldb program`
+3. Set breakpoints at key functions
+4. Run and step through code
+5. Examine ECS world state, entities, and components
+6. Use watchpoints to track data changes
+7. Analyze memory layout and assembly when needed
+
 ## Key Implementation Areas
 - [ ] Core ECS setup with Flecs
 - [ ] Basic phantom entity creation and management
