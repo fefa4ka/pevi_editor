@@ -27,51 +27,63 @@ void DrawText3D(Font font, const char *text, Vector3 position, float fontSize, f
     }
 }
 
-// Input system for 3D navigation and selection
+// Input system for 3D navigation and selection - uses singleton queries
 void InputSystem(ecs_iter_t *it) {
-    EditorState *editor_state = ecs_field(it, EditorState, 0);
-    CameraController *camera = ecs_field(it, CameraController, 1);
+    // Get singleton entities for editor and camera
+    ecs_entity_t editor_entity = ecs_lookup(it->world, "Editor");
+    ecs_entity_t camera_entity = ecs_lookup(it->world, "MainCamera");
     
-    for (int i = 0; i < it->count; i++) {
-        // Handle mouse input for camera control
-        Vector2 mouse_delta = GetMouseDelta();
-        bool left_mouse = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
-        bool right_mouse = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
-        float wheel = GetMouseWheelMove();
-        
-        if (editor_state[i].current_mode == 0) { // Navigation mode
-            if (left_mouse) {
-                // Orbital rotation
-                camera[i].yaw += mouse_delta.x * camera[i].rotation_speed;
-                camera[i].pitch -= mouse_delta.y * camera[i].rotation_speed;
-                camera[i].pitch = Clamp(camera[i].pitch, -89.0f, 89.0f);
-            }
-            
-            if (right_mouse) {
-                // Pan camera target
-                Vector3 cam_pos = GetCameraPosition(camera[i]);
-                Vector3 forward = Vector3Normalize(Vector3Subtract(camera[i].target, cam_pos));
-                Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, (Vector3){0, 1, 0}));
-                Vector3 up = Vector3CrossProduct(right, forward);
-                
-                camera[i].target = Vector3Add(camera[i].target, 
-                    Vector3Scale(right, -mouse_delta.x * 0.01f));
-                camera[i].target = Vector3Add(camera[i].target, 
-                    Vector3Scale(up, mouse_delta.y * 0.01f));
-            }
-            
-            // Zoom with mouse wheel
-            camera[i].distance -= wheel * 2.0f;
-            camera[i].distance = Clamp(camera[i].distance, 1.0f, 100.0f);
+    if (editor_entity == 0 || camera_entity == 0) {
+        printf("Warning: Could not find Editor or MainCamera entities\n");
+        return;
+    }
+    
+    EditorState *editor_state = ecs_get_mut(it->world, editor_entity, EditorState);
+    CameraController *camera = ecs_get_mut(it->world, camera_entity, CameraController);
+    
+    if (!editor_state || !camera) {
+        printf("Warning: Could not get EditorState or CameraController components\n");
+        return;
+    }
+    
+    // Handle mouse input for camera control
+    Vector2 mouse_delta = GetMouseDelta();
+    bool left_mouse = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    bool right_mouse = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
+    float wheel = GetMouseWheelMove();
+    
+    if (editor_state->current_mode == 0) { // Navigation mode
+        if (left_mouse) {
+            // Orbital rotation
+            camera->yaw += mouse_delta.x * camera->rotation_speed;
+            camera->pitch -= mouse_delta.y * camera->rotation_speed;
+            camera->pitch = Clamp(camera->pitch, -89.0f, 89.0f);
         }
         
-        // Mode switching
-        if (IsKeyPressed(KEY_TAB)) {
-            editor_state[i].previous_mode = editor_state[i].current_mode;
-            editor_state[i].current_mode = (editor_state[i].current_mode + 1) % 3;
-            editor_state[i].mode_transition = true;
-            printf("Switched to mode: %d\n", editor_state[i].current_mode);
+        if (right_mouse) {
+            // Pan camera target
+            Vector3 cam_pos = GetCameraPosition(*camera);
+            Vector3 forward = Vector3Normalize(Vector3Subtract(camera->target, cam_pos));
+            Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, (Vector3){0, 1, 0}));
+            Vector3 up = Vector3CrossProduct(right, forward);
+            
+            camera->target = Vector3Add(camera->target, 
+                Vector3Scale(right, -mouse_delta.x * 0.01f));
+            camera->target = Vector3Add(camera->target, 
+                Vector3Scale(up, mouse_delta.y * 0.01f));
         }
+        
+        // Zoom with mouse wheel
+        camera->distance -= wheel * 2.0f;
+        camera->distance = Clamp(camera->distance, 1.0f, 100.0f);
+    }
+    
+    // Mode switching
+    if (IsKeyPressed(KEY_TAB)) {
+        editor_state->previous_mode = editor_state->current_mode;
+        editor_state->current_mode = (editor_state->current_mode + 1) % 3;
+        editor_state->mode_transition = true;
+        printf("Switched to mode: %d\n", editor_state->current_mode);
     }
 }
 
@@ -162,46 +174,57 @@ void HotReloadSystem(ecs_iter_t *it) {
     }
 }
 
-// 3D picking system for phantom selection
+// 3D picking system for phantom selection - uses singleton queries
 void PickingSystem(ecs_iter_t *it) {
-    EditorState *editor_state = ecs_field(it, EditorState, 0);
-    CameraController *camera_ctrl = ecs_field(it, CameraController, 1);
+    // Get singleton entities for editor and camera
+    ecs_entity_t editor_entity = ecs_lookup(it->world, "Editor");
+    ecs_entity_t camera_entity = ecs_lookup(it->world, "MainCamera");
     
-    for (int i = 0; i < it->count; i++) {
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && 
-            editor_state[i].current_mode == 0) { // Navigation mode
-            
-            // Generate picking ray from mouse position
-            Vector2 mouse_pos = GetMousePosition();
-            Camera3D camera = CreateCamera(&camera_ctrl[i]);
-            Ray picking_ray = GetMouseRay(mouse_pos, camera);
-            
-            // Find closest intersection with phantom entities
-            float closest_distance = FLT_MAX;
-            ecs_entity_t closest_entity = 0;
-            
-            // Simplified selection - just select a dummy entity for now
-            // In a full implementation, this would iterate through entities with proper component queries
-            printf("Mouse clicked at (%.2f, %.2f) - ray: (%.2f, %.2f, %.2f)\n", 
-                   mouse_pos.x, mouse_pos.y, picking_ray.direction.x, picking_ray.direction.y, picking_ray.direction.z);
-            
-            // For demo purposes, create a simple entity to select
-            closest_entity = ecs_new(it->world);
-            printf("Created entity %llu for selection\n", closest_entity);
-            
-            // Update selection
-            if (closest_entity != 0) {
-                // Clear previous selection (simplified)
-                if (editor_state[i].focused_entity != 0) {
-                    printf("Clearing previous selection: %llu\n", editor_state[i].focused_entity);
-                }
-                
-                // Set new selection (simplified - just store entity ID)
-                printf("Selecting new entity: %llu\n", closest_entity);
-                
-                editor_state[i].focused_entity = closest_entity;
-                printf("Selected phantom entity %llu\n", closest_entity);
+    if (editor_entity == 0 || camera_entity == 0) {
+        return; // Silently return if entities not found
+    }
+    
+    EditorState *editor_state = ecs_get_mut(it->world, editor_entity, EditorState);
+    CameraController *camera_ctrl = ecs_get(it->world, camera_entity, CameraController);
+    
+    if (!editor_state || !camera_ctrl) {
+        return; // Silently return if components not found
+    }
+    
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && 
+        editor_state->current_mode == 0) { // Navigation mode
+        
+        // Generate picking ray from mouse position
+        Vector2 mouse_pos = GetMousePosition();
+        CameraController camera_copy = *camera_ctrl; // Make a copy since CreateCamera expects non-const
+        Camera3D camera = CreateCamera(&camera_copy);
+        Ray picking_ray = GetMouseRay(mouse_pos, camera);
+        
+        // Find closest intersection with phantom entities
+        float closest_distance = FLT_MAX;
+        ecs_entity_t closest_entity = 0;
+        
+        // Simplified selection - just select a dummy entity for now
+        // In a full implementation, this would iterate through entities with proper component queries
+        printf("Mouse clicked at (%.2f, %.2f) - ray: (%.2f, %.2f, %.2f)\n", 
+               mouse_pos.x, mouse_pos.y, picking_ray.direction.x, picking_ray.direction.y, picking_ray.direction.z);
+        
+        // For demo purposes, create a simple entity to select
+        closest_entity = ecs_new(it->world);
+        printf("Created entity %llu for selection\n", closest_entity);
+        
+        // Update selection
+        if (closest_entity != 0) {
+            // Clear previous selection (simplified)
+            if (editor_state->focused_entity != 0) {
+                printf("Clearing previous selection: %llu\n", editor_state->focused_entity);
             }
+            
+            // Set new selection (simplified - just store entity ID)
+            printf("Selecting new entity: %llu\n", closest_entity);
+            
+            editor_state->focused_entity = closest_entity;
+            printf("Selected phantom entity %llu\n", closest_entity);
         }
     }
 }
@@ -235,16 +258,49 @@ Camera3D CreateCamera(CameraController *camera_ctrl) {
 
 // Register all core systems
 void RegisterCoreSystems(ecs_world_t *world) {
-    // Register systems with pipeline phases
-    ECS_SYSTEM(world, InputSystem, InputPhase, EditorState, CameraController);
-    ECS_SYSTEM(world, TransformSystem, TransformPhase, Position, Rotation, Scale, EcsTransform);
-    ECS_SYSTEM(world, CullingSystem, CullingPhase, EcsTransform, BoundingSphere);
-    ECS_SYSTEM(world, TextRenderSystem, RenderPhase, EcsTransform, TextContent, Visible);
+    // Create pipeline phases
+    ecs_entity_t input_phase = ecs_new_id(world);
+    ecs_set_name(world, input_phase, "InputPhase");
+    ecs_add_pair(world, input_phase, EcsDependsOn, EcsOnUpdate);
+    
+    ecs_entity_t transform_phase = ecs_new_id(world);
+    ecs_set_name(world, transform_phase, "TransformPhase");
+    ecs_add_pair(world, transform_phase, EcsDependsOn, input_phase);
+    
+    ecs_entity_t culling_phase = ecs_new_id(world);
+    ecs_set_name(world, culling_phase, "CullingPhase");
+    ecs_add_pair(world, culling_phase, EcsDependsOn, transform_phase);
+    
+    ecs_entity_t render_phase = ecs_new_id(world);
+    ecs_set_name(world, render_phase, "RenderPhase");
+    ecs_add_pair(world, render_phase, EcsDependsOn, culling_phase);
+    
+    // Register systems - InputSystem and PickingSystem run as singletons
+    ecs_system(world, {
+        .entity = ecs_entity(world, {
+            .name = "InputSystem",
+            .add = ecs_ids(ecs_pair(EcsDependsOn, EcsOnUpdate))
+        }),
+        .callback = InputSystem
+    });
+    
+    ecs_system(world, {
+        .entity = ecs_entity(world, {
+            .name = "PickingSystem",
+            .add = ecs_ids(ecs_pair(EcsDependsOn, EcsOnUpdate))
+        }),
+        .callback = PickingSystem
+    });
+    
+    // Register component-based systems with proper queries
+    ECS_SYSTEM(world, TransformSystem, EcsOnUpdate, Position, Rotation, Scale, EcsTransform);
+    ECS_SYSTEM(world, CullingSystem, EcsOnUpdate, EcsTransform, BoundingSphere);
+    ECS_SYSTEM(world, TextRenderSystem, EcsOnUpdate, EcsTransform, TextContent, Visible);
     ECS_SYSTEM(world, HotReloadSystem, EcsOnUpdate, FileReference);
-    ECS_SYSTEM(world, PickingSystem, InputPhase, EditorState, CameraController);
     
     // Set up dependencies to ensure proper execution order
     ecs_add_pair(world, ecs_id(TransformSystem), EcsDependsOn, ecs_id(InputSystem));
     ecs_add_pair(world, ecs_id(CullingSystem), EcsDependsOn, ecs_id(TransformSystem));
     ecs_add_pair(world, ecs_id(TextRenderSystem), EcsDependsOn, ecs_id(CullingSystem));
+    ecs_add_pair(world, ecs_id(PickingSystem), EcsDependsOn, ecs_id(InputSystem));
 }
