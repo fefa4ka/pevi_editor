@@ -52,22 +52,22 @@ void RegisterSpatialComponents(ecs_world_t *world) {
     ECS_COMPONENT_DEFINE(world, EditorState);
     
     // Register tags
-    ECS_TAG(world, Visible);
-    ECS_TAG(world, Hidden);
-    ECS_TAG(world, NeedsReload);
+    ECS_TAG_DEFINE(world, Visible);
+    ECS_TAG_DEFINE(world, Hidden);
+    ECS_TAG_DEFINE(world, NeedsReload);
     
     // Register custom relationships
-    ECS_TAG(world, References);
-    ECS_TAG(world, Contains);
-    ECS_TAG(world, Imports);
-    ECS_TAG(world, Includes);
-    ECS_TAG(world, Targets);
+    ECS_TAG_DEFINE(world, References);
+    ECS_TAG_DEFINE(world, Contains);
+    ECS_TAG_DEFINE(world, Imports);
+    ECS_TAG_DEFINE(world, Includes);
+    ECS_TAG_DEFINE(world, Targets);
     
     // Register pipeline phases
-    ECS_TAG(world, InputPhase);
-    ECS_TAG(world, TransformPhase);
-    ECS_TAG(world, CullingPhase);
-    ECS_TAG(world, RenderPhase);
+    ECS_TAG_DEFINE(world, InputPhase);
+    ECS_TAG_DEFINE(world, TransformPhase);
+    ECS_TAG_DEFINE(world, CullingPhase);
+    ECS_TAG_DEFINE(world, RenderPhase);
     
     // Set up cleanup hooks for complex components
     // Note: Cleanup hooks are set separately since components are already registered
