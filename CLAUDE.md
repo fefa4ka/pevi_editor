@@ -6,7 +6,19 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 ## Key Development Info
 - **Entry Point**: `src/main.c` (currently minimal Raylib window)
 - **Build**: `cmake --build build && ./build/editor`
-- **Current State**: ✅ **BUILD SUCCESSFUL** - All dependencies working, ready for ECS implementation
+- **Current State**: ⚠️ **ECS COMPILATION FIXED** - Components compile successfully, observer error in runtime
+
+## ECS Examples Status
+- ✅ `build/examples/ecs_complete/spatial_editor_simple` - Simple ECS demo works
+- ⚠️ `build/examples/ecs_complete/spatial_editor` - Complete ECS example compiles but crashes with observer error
+- ✅ `build/editor` - Main editor executable builds and runs (basic Raylib window)
+
+## Recent Fixes Applied
+- Fixed component registration conflicts in main.c
+- Added proper component declarations in spatial.h
+- Fixed ecs_set() calls for Position and complex struct components  
+- Added glfw library linking for complete ECS example
+- Added missing Includes relationship component
 
 ## Naming Conventions
 

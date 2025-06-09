@@ -1,31 +1,30 @@
-# TODO List for Pevi Editor
+# Pevi Editor Development TODO
 
-## Current Tasks
-- [ ] Set up core ECS system with Flecs
-- [ ] Implement basic phantom entity management
-- [ ] Set up camera controller
-- [ ] Add input handling system
-- [ ] Create text rendering system
-- [ ] Implement file I/O integration
+## Current Priority Issues
+
+### High Priority
+- [ ] **Fix observer registration error**: ECS complete example crashes with "observer must have at least one term" error
+  - Location: `examples/ecs_complete/systems/observers.c` 
+  - Issue: Observer created with no terms during RegisterObservers() call
+  - Need to investigate component availability for `ecs_id(Selected)` and `ecs_id(FileReference)`
+
+### Medium Priority  
+- [ ] **Test all ECS examples**: Verify other examples still work after component registration fixes
+- [ ] **Debug simple vs complete example differences**: Understand why simple example works but complete doesn't
+- [ ] **Improve error handling**: Add proper error checking in component registration
+
+### Low Priority
+- [ ] **Complete ECS implementation**: Continue building out the 3D spatial editor features
+- [ ] **Add text rendering system**: Implement actual 3D text rendering for phantoms
+- [ ] **File I/O integration**: Real file loading and watching functionality
 
 ## Completed Tasks
-- [x] Build project with CMake
-- [x] Test basic window creation and rendering
-- [x] Fix missing flecs_pevi_basic.c example
-- [x] Verify all dependencies are working (Raylib, Flecs, JoltC, etc.)
-- [x] Create LLDB debugging demonstration
-- [x] Add debugging examples and documentation
-- [x] Test LLDB with ECS entity examination
+- [x] **Fixed ECS compilation issues**: Resolved component registration conflicts
+- [x] **Fixed ecs_set syntax**: Proper handling of Position and complex struct components  
+- [x] **Added missing dependencies**: glfw library linking and Includes relationship
+- [x] **Build system working**: All examples compile successfully
 
-## Build Progress
-- ✅ Project builds successfully with CMake
-- ✅ Main editor executable runs and creates window
-- ✅ All examples compile and run correctly
-- ✅ All dependencies are properly linked:
-  - Raylib 5.5 (graphics/windowing)
-  - Flecs (ECS system) 
-  - JoltC (physics)
-  - ImGui/cimgui (UI)
-  - libuv (async I/O)
-  - lr_text (text editing)
-- Ready for ECS implementation and core features
+## Notes
+- The simple ECS example (`spatial_editor_simple`) works perfectly
+- Main compilation issues were resolved but runtime observer error remains
+- Components are properly declared but may need different registration order
