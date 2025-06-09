@@ -1,30 +1,42 @@
 # Pevi Editor Development TODO
 
 ## Current Priority Issues
+✅ **COMPLETED**: Fixed observer registration error that was crashing the ECS complete example
 
-### High Priority
-- [ ] **Fix observer registration error**: ECS complete example crashes with "observer must have at least one term" error
-  - Location: `examples/ecs_complete/systems/observers.c` 
-  - Issue: Observer created with no terms during RegisterObservers() call
-  - Need to investigate component availability for `ecs_id(Selected)` and `ecs_id(FileReference)`
+## Recently Completed Tasks
+- ✅ **Fixed observer registration syntax**: Replaced compound literal with explicit descriptor initialization 
+- ✅ **Fixed component registration API**: Used ECS_COMPONENT_DEFINE instead of ECS_COMPONENT
+- ✅ **Fixed tag registration API**: Used ECS_TAG_DEFINE instead of ECS_TAG
+- ✅ **Fixed component hook conflicts**: Replaced ecs_component() with ecs_set_hooks()
+- ✅ **Fixed entity naming conflict**: Renamed "EditorState" entity to "Editor"
+- ✅ **Verified all ECS examples work**: Both simple and complete examples now run successfully
 
-### Medium Priority  
-- [ ] **Test all ECS examples**: Verify other examples still work after component registration fixes
-- [ ] **Debug simple vs complete example differences**: Understand why simple example works but complete doesn't
-- [ ] **Improve error handling**: Add proper error checking in component registration
+## Medium Priority  
+- [ ] **Complete camera controller implementation**: Add smooth camera transitions and constraints
+- [ ] **Implement 3D text rendering system**: Actual 3D text rendering for phantoms in space
+- [ ] **Add input handling systems**: Mouse picking, keyboard shortcuts, mode switching
+- [ ] **Improve selection system**: Visual feedback, multi-selection, selection persistence
 
-### Low Priority
-- [ ] **Complete ECS implementation**: Continue building out the 3D spatial editor features
-- [ ] **Add text rendering system**: Implement actual 3D text rendering for phantoms
-- [ ] **File I/O integration**: Real file loading and watching functionality
+## Low Priority
+- [ ] **File I/O integration**: Real file loading, watching, and hot reloading functionality
+- [ ] **Command system**: Text-based command interface for editor operations
+- [ ] **Performance optimization**: Spatial partitioning, LOD systems, frustum culling
+- [ ] **Visual improvements**: Better materials, lighting, particle effects for code elements
 
-## Completed Tasks
-- [x] **Fixed ECS compilation issues**: Resolved component registration conflicts
-- [x] **Fixed ecs_set syntax**: Proper handling of Position and complex struct components  
-- [x] **Added missing dependencies**: glfw library linking and Includes relationship
-- [x] **Build system working**: All examples compile successfully
+## Technical Debt
+- [ ] **Add comprehensive error handling**: Proper error checking in all ECS operations
+- [ ] **Create unit tests**: Test component registration, observer behavior, file loading
+- [ ] **Documentation**: Complete API documentation for all ECS components and systems
+- [ ] **Code review**: Ensure all ECS patterns follow Flecs best practices
+
+## Future Features
+- [ ] **Multi-file project support**: Handle large codebases with multiple files and directories
+- [ ] **Code dependency visualization**: Show includes, function calls, variable references as 3D connections
+- [ ] **Collaborative editing**: Multi-user editing in the same 3D space
+- [ ] **Plugin system**: Support for language-specific analyzers and renderers
 
 ## Notes
-- The simple ECS example (`spatial_editor_simple`) works perfectly
-- Main compilation issues were resolved but runtime observer error remains
-- Components are properly declared but may need different registration order
+- The core ECS architecture is now solid and ready for feature development
+- Observer system provides reactive programming for file changes and selection events
+- Component registration patterns are established and documented
+- Ready to focus on user-facing features and 3D editor functionality

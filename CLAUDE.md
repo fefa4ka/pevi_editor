@@ -6,19 +6,51 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 ## Key Development Info
 - **Entry Point**: `src/main.c` (currently minimal Raylib window)
 - **Build**: `cmake --build build && ./build/editor`
-- **Current State**: ⚠️ **ECS COMPILATION FIXED** - Components compile successfully, observer error in runtime
+- **Current State**: ✅ **ECS COMPLETE EXAMPLE WORKING** - All compilation and runtime issues resolved
 
 ## ECS Examples Status
 - ✅ `build/examples/ecs_complete/spatial_editor_simple` - Simple ECS demo works
-- ⚠️ `build/examples/ecs_complete/spatial_editor` - Complete ECS example compiles but crashes with observer error
+- ✅ `build/examples/ecs_complete/spatial_editor` - **FIXED!** Complete ECS example now runs successfully
 - ✅ `build/editor` - Main editor executable builds and runs (basic Raylib window)
 
 ## Recent Fixes Applied
-- Fixed component registration conflicts in main.c
-- Added proper component declarations in spatial.h
-- Fixed ecs_set() calls for Position and complex struct components  
-- Added glfw library linking for complete ECS example
-- Added missing Includes relationship component
+- ✅ Fixed observer registration syntax by replacing compound literals with explicit descriptor initialization
+- ✅ Fixed component registration by using ECS_COMPONENT_DEFINE instead of ECS_COMPONENT
+- ✅ Fixed tag registration by using ECS_TAG_DEFINE instead of ECS_TAG  
+- ✅ Fixed component hook conflicts by using ecs_set_hooks instead of ecs_component
+- ✅ Fixed entity naming conflict by renaming "EditorState" entity to "Editor"
+- ✅ Resolved "observer must have at least one term" error completely
+
+## ECS Development Guidelines
+
+### Component Registration Pattern
+```c
+// In header file (.h)
+ECS_COMPONENT_DECLARE(ComponentName);
+extern ECS_DECLARE(TagName);
+
+// In implementation file (.c)  
+ECS_COMPONENT_DEFINE(world, ComponentName);
+ECS_TAG_DEFINE(world, TagName);
+```
+
+### Observer Registration Pattern
+```c
+// Use explicit descriptor initialization, NOT compound literals
+ecs_observer_desc_t observer_desc = {0};
+observer_desc.query.terms[0].id = ecs_id(ComponentName);
+observer_desc.events[0] = EcsOnSet;
+observer_desc.callback = CallbackFunction;
+ecs_observer_init(world, &observer_desc);
+```
+
+### Component Hooks Pattern
+```c
+// Set hooks AFTER component registration
+ecs_set_hooks(world, ComponentName, {
+    .dtor = ComponentName_dtor
+});
+```
 
 ## Naming Conventions
 
@@ -206,8 +238,8 @@ lldb build/examples/flecs_basic_entity_component
 7. Analyze memory layout and assembly when needed
 
 ## Key Implementation Areas
-- [ ] Core ECS setup with Flecs
-- [ ] Basic phantom entity creation and management
+- ✅ Core ECS setup with Flecs
+- ✅ Basic phantom entity creation and management
 - [ ] Camera controller implementation
 - [ ] Text rendering system
 - [ ] Input handling for different modes
