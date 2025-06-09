@@ -289,37 +289,16 @@ Camera3D CreateCamera(CameraController *camera_ctrl) {
 
 // Register all core systems
 void RegisterCoreSystems(ecs_world_t *world) {
-    // Register InputSystem to run on EditorState entities
-    ecs_entity_t input_system = ecs_system(world, {
-        .entity = ecs_entity(world, {
-            .name = "InputSystem"
-        }),
-        .query.terms = {
-            {ecs_id(EditorState)}
-        },
-        .callback = InputSystem
-    });
-    
-    // Register PickingSystem to run on EditorState entities
-    ecs_entity_t picking_system = ecs_system(world, {
-        .entity = ecs_entity(world, {
-            .name = "PickingSystem"
-        }),
-        .query.terms = {
-            {ecs_id(EditorState)}
-        },
-        .callback = PickingSystem
-    });
-    
-    // Register component-based systems with proper queries
+    // Register systems using ECS_SYSTEM macro for consistency
+    ECS_SYSTEM(world, InputSystem, EcsOnUpdate, EditorState);
+    ECS_SYSTEM(world, PickingSystem, EcsOnUpdate, EditorState);
     ECS_SYSTEM(world, TransformSystem, EcsOnUpdate, Position, Rotation, Scale, EcsTransform);
     ECS_SYSTEM(world, CullingSystem, EcsOnUpdate, EcsTransform, BoundingSphere);
-    ECS_SYSTEM(world, TextRenderSystem, EcsOnUpdate, EcsTransform, TextContent, Visible);
+    // TextRenderSystem removed - 3D text rendering now handled in main loop
     ECS_SYSTEM(world, HotReloadSystem, EcsOnUpdate, FileReference);
     
     // Set up dependencies to ensure proper execution order
-    ecs_add_pair(world, ecs_id(TransformSystem), EcsDependsOn, input_system);
+    ecs_add_pair(world, ecs_id(TransformSystem), EcsDependsOn, ecs_id(InputSystem));
     ecs_add_pair(world, ecs_id(CullingSystem), EcsDependsOn, ecs_id(TransformSystem));
-    ecs_add_pair(world, ecs_id(TextRenderSystem), EcsDependsOn, ecs_id(CullingSystem));
-    ecs_add_pair(world, picking_system, EcsDependsOn, input_system);
+    ecs_add_pair(world, ecs_id(PickingSystem), EcsDependsOn, ecs_id(InputSystem));
 }

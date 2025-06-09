@@ -129,6 +129,43 @@ int main(void) {
             DrawLine3D((Vector3){0, 0, 0}, (Vector3){5, 0, 0}, RED);    // X axis
             DrawLine3D((Vector3){0, 0, 0}, (Vector3){0, 5, 0}, GREEN);  // Y axis
             DrawLine3D((Vector3){0, 0, 0}, (Vector3){0, 0, 5}, BLUE);   // Z axis
+
+            // Render all 3D text entities
+            ecs_query_t *text_query = ecs_query(world, {
+                .terms = {
+                    { ecs_id(Position) },
+                    { ecs_id(TextContent) },
+                    { ecs_id(Visible) }
+                }
+            });
+            
+            ecs_iter_t text_iter = ecs_query_iter(world, text_query);
+            
+            while (ecs_query_next(&text_iter)) {
+                Position *positions = ecs_field(&text_iter, Position, 0);
+                TextContent *texts = ecs_field(&text_iter, TextContent, 1);
+                
+                for (int i = 0; i < text_iter.count; i++) {
+                    Vector3 position = {positions[i].x, positions[i].y, positions[i].z};
+                    
+                    // Draw 3D text directly using Raylib
+                    // For better visibility, we'll draw the text as a billboard
+                    Vector2 screenPos = GetWorldToScreen(position, camera);
+                    
+                    if (screenPos.x >= 0 && screenPos.x <= GetScreenWidth() &&
+                        screenPos.y >= 0 && screenPos.y <= GetScreenHeight()) {
+                        
+                        // Calculate text size for positioning
+                        Font font = GetFontDefault();
+                        Vector2 textSize = MeasureTextEx(font, texts[i].text, texts[i].font_size * 20, 1.0f);
+                        
+                        // Draw text with background for better visibility
+                        Vector2 textPos = {screenPos.x - textSize.x/2, screenPos.y - textSize.y/2};
+                        DrawRectangle(textPos.x - 2, textPos.y - 2, textSize.x + 4, textSize.y + 4, ColorAlpha(BLACK, 0.7f));
+                        DrawTextEx(font, texts[i].text, textPos, texts[i].font_size * 20, 1.0f, texts[i].color);
+                    }
+                }
+            }
             
             // ECS text rendering happens in TextRenderSystem
             // But we can also draw additional 3D elements here
