@@ -49,7 +49,8 @@ const char* fragmentShaderSource =
     "    vec3 msd = texture(msdfTexture, TexCoord).rgb;\n"
     "    float sd = median(msd.r, msd.g, msd.b);\n"
     "    float screenPxDistance = pxRange * (sd - 0.5);\n"
-    "    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);\n"
+    "    // Simple but effective smoothing\n"
+    "    float opacity = smoothstep(-0.75, 0.75, screenPxDistance);\n"
     "    FragColor = vec4(textColor.rgb, textColor.a * opacity);\n"
     "}\n";
 
@@ -188,36 +189,45 @@ float compute_distance_to_edge(unsigned char* bitmap, int width, int height, int
     return center_inside ? min_dist : -min_dist;
 }
 
-// Improved MSDF generation with multi-channel distance fields
+// Simplified but improved MSDF generation
 void generate_distance_field(unsigned char* bitmap, int width, int height, unsigned char* output) {
-    int search_radius = 12;  // Increased radius for better quality
+    int search_radius = 8;  // Reasonable radius
     
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int idx = y * width + x;
             
-            // For MSDF, we need three different distance calculations
-            // This is a simplified approach - real MSDF uses edge segments
+            // Check if we're in a significant area (not just padding artifacts)
+            int local_content = 0;
+            for (int dy = -2; dy <= 2; dy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    int nx = x + dx, ny = y + dy;
+                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if (bitmap[ny * width + nx] > 10) local_content++;
+                    }
+                }
+            }
             
-            // Red channel: distance to nearest edge
+            if (local_content == 0) {
+                // Empty area - set to background
+                output[idx * 3] = 0;
+                output[idx * 3 + 1] = 0;
+                output[idx * 3 + 2] = 0;
+                continue;
+            }
+            
+            // Simple but effective three-channel approach
             float dist_r = compute_distance_to_edge(bitmap, width, height, x, y, search_radius);
+            float dist_g = compute_distance_to_edge(bitmap, width, height, x + 1, y, search_radius);
+            float dist_b = compute_distance_to_edge(bitmap, width, height, x, y + 1, search_radius);
             
-            // Green channel: distance with slight offset for better quality
-            int offset_x = x + (x % 2 == 0 ? 1 : -1);
-            float dist_g = compute_distance_to_edge(bitmap, width, height, 
-                                                   offset_x, y, search_radius);
-            
-            // Blue channel: distance with different offset
-            int offset_y = y + (y % 2 == 0 ? 1 : -1);
-            float dist_b = compute_distance_to_edge(bitmap, width, height, 
-                                                   x, offset_y, search_radius);
-            
-            // Normalize and convert to 0-255 range
+            // Better normalization
             float max_dist = (float)search_radius;
             
-            int r = (int)((dist_r / max_dist * 0.5f + 0.5f) * 255.0f);
-            int g = (int)((dist_g / max_dist * 0.5f + 0.5f) * 255.0f);
-            int b = (int)((dist_b / max_dist * 0.5f + 0.5f) * 255.0f);
+            // Map to 0-255 with better contrast
+            int r = (int)((dist_r / max_dist * 0.4f + 0.5f) * 255.0f);
+            int g = (int)((dist_g / max_dist * 0.4f + 0.5f) * 255.0f);
+            int b = (int)((dist_b / max_dist * 0.4f + 0.5f) * 255.0f);
             
             // Clamp values
             r = r < 0 ? 0 : (r > 255 ? 255 : r);
@@ -253,12 +263,15 @@ Character load_character(FT_Face face, char c) {
     int padded_width = width + 24;  // Increased padding for better distance field
     int padded_height = height + 24;
     
-    // Create padded bitmap
+    // Create padded bitmap with better initialization
     unsigned char* padded_bitmap = calloc(padded_width * padded_height, 1);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            padded_bitmap[(y + 12) * padded_width + (x + 12)] = 
-                g->bitmap.buffer[y * g->bitmap.pitch + x];
+            int src_idx = y * g->bitmap.pitch + x;
+            int dst_idx = (y + 12) * padded_width + (x + 12);
+            if (src_idx < g->bitmap.rows * g->bitmap.pitch && dst_idx < padded_width * padded_height) {
+                padded_bitmap[dst_idx] = g->bitmap.buffer[src_idx];
+            }
         }
     }
     
@@ -312,8 +325,8 @@ int main(int argc, char* argv[]) {
     }
     printf("Font loaded successfully\n");
     
-    // Set font size (increased for better quality)
-    FT_Set_Pixel_Sizes(face, 0, 64);
+    // Set font size (much larger for better quality)
+    FT_Set_Pixel_Sizes(face, 0, 96);
     
     // Initialize GLFW
     if (!glfwInit()) {
@@ -487,7 +500,7 @@ int main(int argc, char* argv[]) {
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
-        glUniform1f(pxRangeLoc, 8.0f);
+        glUniform1f(pxRangeLoc, 12.0f);
         glUniform4f(textColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
         
         // Bind texture
