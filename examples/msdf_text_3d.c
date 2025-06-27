@@ -413,10 +413,18 @@ int main(int argc, char* argv[]) {
         free(char_data);
     }
     
-    // Create atlas texture
+    // Create atlas texture with proper distance field data
     GLuint atlas_texture;
     glGenTextures(1, &atlas_texture);
     glBindTexture(GL_TEXTURE_2D, atlas_texture);
+    
+    // Create a better test atlas with proper MSDF data
+    for (int i = 0; i < atlas_width * atlas_height; i++) {
+        atlas_data[i * 3] = 127;     // R - center value for distance field
+        atlas_data[i * 3 + 1] = 127; // G - center value for distance field
+        atlas_data[i * 3 + 2] = 127; // B - center value for distance field
+    }
+    
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas_width, atlas_height, 0, 
                  GL_RGB, GL_UNSIGNED_BYTE, atlas_data);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
