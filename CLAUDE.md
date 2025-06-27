@@ -3,6 +3,44 @@
 ## Quick Reference
 Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that represent semantic parts of code arranged by mnemonic sense. A single file is edited through multiple phantoms, each displaying functions, classes, or logical code blocks positioned in 3D space for intuitive navigation and understanding. Uses C11, CMake, Raylib, JoltC physics, Flecs ECS, ImGui, and lr_text buffers.
 
+## Mnemonic Sense Definition
+**Mnemonic sense** refers to the spatial arrangement of code phantoms based on how developers naturally think about and remember code relationships:
+
+### Spatial Memory Principles
+- **Call Flow**: Functions that call each other are positioned closer together
+- **Data Flow**: Variables and their usage points form spatial clusters
+- **Logical Hierarchy**: Parent-child relationships (classes/methods, modules/functions) use vertical positioning
+- **Temporal Sequence**: Code execution order influences left-to-right or front-to-back arrangement
+- **Conceptual Grouping**: Related functionality (error handling, initialization, utilities) forms spatial neighborhoods
+
+### Examples of Mnemonic Arrangements
+```
+3D Space Layout Example:
+┌─────────────────────────────────────┐
+│ High Level (Y+)                     │
+│   [main()]                          │
+│      │                              │
+│   [init_systems()]  [cleanup()]     │
+│      │                   │          │
+│ Mid Level                │          │
+│   [create_window()]      │          │
+│   [setup_physics()]      │          │
+│      │                   │          │
+│ Low Level (Y-)           │          │
+│   [malloc_wrapper()]     │          │
+│   [error_handler()]──────┘          │
+│                                     │
+│ Left: Core Logic    Right: Utilities│
+└─────────────────────────────────────┘
+```
+
+### Memory-Based Positioning Rules
+1. **Vertical Axis (Y)**: Abstraction level (high-level functions up, low-level down)
+2. **Horizontal Axis (X)**: Functional domains (core left, utilities right, I/O far right)
+3. **Depth Axis (Z)**: Execution frequency (hot paths close, cold paths distant)
+4. **Proximity**: Functions that developers mentally associate are spatially close
+5. **Visual Paths**: Code flow creates visual "roads" through 3D space that match mental models
+
 ## Key Development Info
 - **Entry Point**: `src/main.c` (currently minimal Raylib window)
 - **Build**: `cmake --build build && ./build/editor`
