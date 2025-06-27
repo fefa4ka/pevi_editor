@@ -1,4 +1,5 @@
 # Claude Development Guide for Pevi
+**Updated: 2025-06-27 by Project Manager**
 
 ## Quick Reference
 Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that represent semantic parts of code arranged by mnemonic sense. A single file is edited through multiple phantoms, each displaying functions, classes, or logical code blocks positioned in 3D space for intuitive navigation and understanding. Uses C11, CMake, Raylib, JoltC physics, Flecs ECS, ImGui, and lr_text buffers.
@@ -46,7 +47,25 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that r
 - **Build**: `cmake --build build && ./build/editor`
 - **Current State**: ✅ **BUILD SYSTEM FULLY WORKING** - All compilation, runtime, and dependency issues resolved
 - **Repository**: ✅ **FULLY CLEANED** - All build artifacts removed, proper .gitignore, clean commits synced to remote
-- **Manual Testing**: ✅ **COMPLETED** - Issue #5 successfully resolved with comprehensive build system fixes
+
+## Critical Issues Status (Updated 2025-06-27)
+### 🚨 Open Blocking Issues - Immediate Developer Assignment Needed
+- **Issue #8**: MSDF 3D Text Rendering Completely Broken (CRITICAL - blocks core editor functionality) 
+- **Issue #9**: Core Input System Not Working - Keyboard/Mouse failures (CRITICAL - blocks interaction)
+- **Issue #10**: ECS Component Registration and System Execution Failures (HIGH - core architecture broken)
+
+### ✅ Resolved Issues
+- **Issue #5 CLOSED**: Manual Testing Build System - All 5 test cases passed successfully
+- **Issue #6 CLOSED**: Git Repository Cleanup - Repository fully cleaned and synced with remote
+- **Issue #7 MERGED**: Build System PR - Successfully merged with all fixes applied
+- **Issues #2, #3, #4 CLOSED**: Manual testing issues closed - converted to specific bug issues above
+
+## Urgent Developer Actions Required
+1. **Text Rendering Expert** needed for Issue #8 - Without 3D text, code phantoms cannot display
+2. **Input System Developer** needed for Issue #9 - Without input, editor is unusable
+3. **ECS Specialist** needed for Issue #10 - Core architecture validation failing
+
+**Impact**: All three issues block core editor functionality development
 
 ## Build System Status
 - ✅ **CMake Configuration Working** - Automatic vcpkg dependency discovery implemented
@@ -68,7 +87,7 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that r
 - ✅ **Clean Working Directory**: No tracked build artifacts or uncommitted files
 - ✅ **Proper .gitignore**: Excludes build/, vcpkg_installed/, *.o, *.a, *.so, CMake files
 - ✅ **29 Commits Pushed**: All local development history synced to origin/master
-- ✅ **Develop Branch Created**: Ready for feature branch workflow  
+- ✅ **Develop Branch Created**: Ready for feature branch workflow
 - ⚠️ **Branch Protection Needed**: Repository owner must enable protection via GitHub settings
 - ✅ **28MB Dependencies Untracked**: vcpkg libraries removed from version control
 
@@ -76,20 +95,6 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that r
 - ✅ `build/examples/ecs_complete/spatial_editor_simple` - Simple ECS demo works
 - ✅ `build/examples/ecs_complete/spatial_editor` - **FULLY FIXED!** Complete ECS example now runs successfully with navigation and input working
 - ✅ `build/editor` - Main editor executable builds and runs (basic Raylib window)
-
-## Recent Fixes Applied
-- ✅ Fixed observer registration syntax by replacing compound literals with explicit descriptor initialization
-- ✅ Fixed component registration by using ECS_COMPONENT_DEFINE instead of ECS_COMPONENT
-- ✅ Fixed tag registration by using ECS_TAG_DEFINE instead of ECS_TAG  
-- ✅ Fixed component hook conflicts by using ecs_set_hooks instead of ecs_component
-- ✅ Fixed entity naming conflict by renaming "EditorState" entity to "Editor"
-- ✅ Resolved "observer must have at least one term" error completely
-- ✅ **NEW**: Fixed InputSystem and PickingSystem query mismatch - systems now use singleton pattern to access Editor and MainCamera entities
-- ✅ **NEW**: Fixed system registration and removed problematic pipeline phases
-- ✅ **NEW**: Navigation, camera control, and input now working properly in spatial_editor example
-- ✅ **LATEST**: Fixed 3D text rendering by moving from TextRenderSystem to main render loop with proper camera context
-- ✅ **LATEST**: Optimized text rendering query creation - created once at initialization instead of every frame
-- ✅ **LATEST**: Implemented billboard-style 3D text rendering with background for better visibility
 
 ## ECS Development Guidelines
 
@@ -99,7 +104,7 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that r
 ECS_COMPONENT_DECLARE(ComponentName);
 extern ECS_DECLARE(TagName);
 
-// In implementation file (.c)  
+// In implementation file (.c)
 ECS_COMPONENT_DEFINE(world, ComponentName);
 ECS_TAG_DEFINE(world, TagName);
 ```
@@ -121,6 +126,37 @@ ecs_set_hooks(world, ComponentName, {
     .dtor = ComponentName_dtor
 });
 ```
+
+## Development Workflow
+1. **MANDATORY**: Create GitHub issues for all non-trivial work
+2. **MANDATORY**: All code changes go through Pull Requests to master
+3. **MANDATORY**: No direct commits to master branch
+4. Follow the layered architecture (Core → Framework → Editor)
+5. Implement ECS components using Flecs best practices
+6. Use atomic components and proper query design
+7. Maintain clear separation between layers
+
+## Development Focus Areas
+### ✅ Working Systems
+- Core ECS setup with Flecs
+- Basic phantom entity creation and management
+- Camera controller implementation
+- 3D text rendering system (billboard-style with proper camera context)
+- Input handling for navigation mode (in examples)
+- Build system and dependency management
+- Repository management and workflow
+
+### 🚨 Critical Issues (Need Immediate Work)
+- **Issue #8**: MSDF text rendering broken - blocks code phantom display
+- **Issue #9**: Main editor input system broken - blocks all interaction
+- **Issue #10**: ECS component registration failures - breaks core architecture
+
+### 🔄 Next Development Phase (After Critical Issues Fixed)
+- Input handling for edit and command modes
+- File I/O integration
+- Command system implementation
+- Multiple phantom management
+- Code parsing and phantom generation
 
 ## Naming Conventions
 
@@ -244,13 +280,6 @@ void camera_settings_apply(CameraSettings settings);
 - **Pointers**: same as instances, but consider nullability in naming
 - **Temporary/local**: short names acceptable (pos, rot, size)
 - **Global/static**: full descriptive names required
-
-## Development Workflow
-1. **MANDATORY**: Commit after every file modification, addition, or deletion
-2. Follow the layered architecture (Core → Framework → Editor)
-3. Implement ECS components using Flecs best practices (see docs/ECS_FLECS.md)
-4. Use atomic components and proper query design
-5. Maintain clear separation between layers
 
 ## Debugging with LLDB
 
@@ -307,135 +336,10 @@ lldb build/examples/flecs_basic_entity_component
 6. Use watchpoints to track data changes
 7. Analyze memory layout and assembly when needed
 
-## Key Implementation Areas
-- ✅ Core ECS setup with Flecs
-- ✅ Basic phantom entity creation and management
-- ✅ Camera controller implementation
-- ✅ 3D text rendering system (billboard-style with proper camera context)
-- ✅ Input handling for navigation mode
-- [ ] Input handling for edit and command modes
-- [ ] File I/O integration
-- [ ] Command system implementation
-
-## Naming Conventions
-
-### File Naming
-- Headers: `snake_case.h` in appropriate `include/pevi/` subdirectory
-- Implementation: `snake_case.c` in corresponding `src/` subdirectory
-- Follow the three-layer structure for all new components
-
-### Method Naming
-Use the pattern: `<object>_<action>` or `<object>_<subobject>_<action>`
-
-**Examples:**
-```c
-// Basic object actions
-phantom_create()
-phantom_destroy()
-phantom_update()
-camera_move()
-camera_rotate()
-editor_init()
-
-// Subobject actions
-phantom_text_content_get()
-phantom_text_content_set()
-phantom_position_update()
-phantom_size_get()
-camera_settings_apply()
-editor_mode_set()
-editor_config_load()
-
-// Complex operations
-phantom_file_content_load()
-phantom_text_selection_clear()
-camera_target_phantom_set()
-editor_command_processor_execute()
-```
-
-**Naming Rules:**
-- Use snake_case for all identifiers
-- Object comes first (phantom, camera, editor, etc.)
-- Subobject is optional middle component (text, position, settings, etc.)
-- Action is always last (get, set, create, destroy, update, etc.)
-- Be consistent with action verbs across the codebase
-
-### Struct Naming
-Use PascalCase for struct type names, snake_case for instances.
-
-**Struct Type Examples:**
-```c
-// Core structs
-typedef struct {
-    float x, y, z;
-} Position;
-
-typedef struct {
-    float pitch, yaw, roll;
-} Rotation;
-
-typedef struct {
-    float width, height;
-} PhantomSize;
-
-// Component structs
-typedef struct {
-    char* content;
-    size_t length;
-    size_t capacity;
-} TextContent;
-
-typedef struct {
-    char* filepath;
-    bool is_dirty;
-    time_t last_modified;
-} FileInfo;
-
-// Complex structs
-typedef struct {
-    Position position;
-    Rotation rotation;
-    PhantomSize size;
-    TextContent text;
-    FileInfo* file_info;  // Optional
-} PhantomData;
-
-typedef struct {
-    Position position;
-    Rotation rotation;
-    float fov;
-    float near_plane;
-    float far_plane;
-} CameraSettings;
-```
-
-**Instance Naming Examples:**
-```c
-// Simple instances
-Position phantom_position;
-Rotation camera_rotation;
-PhantomSize default_size;
-
-// Descriptive instances
-TextContent buffer_content;
-FileInfo current_file;
-CameraSettings main_camera;
-
-// Multiple instances
-Position phantom_positions[MAX_PHANTOMS];
-PhantomData active_phantoms[MAX_ACTIVE];
-CameraSettings camera_presets[NUM_PRESETS];
-
-// Usage in functions
-void phantom_position_set(EntityID phantom_id, Position new_position);
-Position phantom_position_get(EntityID phantom_id);
-void camera_settings_apply(CameraSettings settings);
-```
-
-**Struct Naming Rules:**
-- **Types**: PascalCase (Position, TextContent, PhantomData)
-- **Instances**: snake_case, descriptive names (phantom_position, buffer_content)
-- **Arrays**: plural form (phantom_positions, camera_presets)
-- **Pointers**: same as instances, but consider nullability in naming
-- **Temporary/local**: short names acceptable (pos, rot, size)
-- **Global/static**: full descriptive names required
+## Project Management Guidelines
+- **Main Goal**: Keep developers unblocked and productive
+- **Issue Management**: Focus on actionable, specific issues
+- **PR Flow**: Quick reviews and merges to prevent stale work
+- **No Waste**: Delete unnecessary documentation and close irrelevant issues
+- **Team Coordination**: Assign clear ownership to prevent conflicts
+- **Priority**: Critical bugs first, features second
