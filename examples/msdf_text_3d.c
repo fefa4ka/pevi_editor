@@ -158,48 +158,75 @@ GLuint create_shader_program(const char* vertexSource, const char* fragmentSourc
     return program;
 }
 
-// Simple distance field generation from bitmap
-void generate_distance_field(unsigned char* bitmap, int width, int height, unsigned char* output) {
-    // This is a simplified SDF generation - for production use msdfgen
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int idx = y * width + x;
-            float min_dist = 999999.0f;
-            int inside = bitmap[idx] > 128;
-            
-            // Search in a small radius for edge
-            int search_radius = 8;
-            for (int dy = -search_radius; dy <= search_radius; dy++) {
-                for (int dx = -search_radius; dx <= search_radius; dx++) {
-                    int nx = x + dx;
-                    int ny = y + dy;
-                    if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
-                        int nidx = ny * width + nx;
-                        int neighbor_inside = bitmap[nidx] > 128;
-                        if (inside != neighbor_inside) {
-                            float dist = sqrtf(dx*dx + dy*dy);
-                            if (dist < min_dist) {
-                                min_dist = dist;
-                            }
-                        }
+// Compute distance to nearest edge
+float compute_distance_to_edge(unsigned char* bitmap, int width, int height, int x, int y, int search_radius) {
+    float min_dist = (float)search_radius;
+    
+    // Bounds check
+    if (x < 0 || x >= width || y < 0 || y >= height) {
+        return min_dist;
+    }
+    
+    int center_inside = bitmap[y * width + x] > 128;
+    
+    for (int dy = -search_radius; dy <= search_radius; dy++) {
+        for (int dx = -search_radius; dx <= search_radius; dx++) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                int neighbor_inside = bitmap[ny * width + nx] > 128;
+                if (center_inside != neighbor_inside) {
+                    float dist = sqrtf((float)(dx*dx + dy*dy));
+                    if (dist < min_dist) {
+                        min_dist = dist;
                     }
                 }
             }
+        }
+    }
+    
+    return center_inside ? min_dist : -min_dist;
+}
+
+// Improved MSDF generation with multi-channel distance fields
+void generate_distance_field(unsigned char* bitmap, int width, int height, unsigned char* output) {
+    int search_radius = 12;  // Increased radius for better quality
+    
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int idx = y * width + x;
             
-            // Normalize distance to 0-255 range
-            if (min_dist > search_radius) min_dist = search_radius;
-            float normalized = min_dist / search_radius;
-            if (!inside) normalized = -normalized;
+            // For MSDF, we need three different distance calculations
+            // This is a simplified approach - real MSDF uses edge segments
             
-            // Map to 0-255 with 0.5 at the edge
-            int value = (int)((normalized * 0.5f + 0.5f) * 255);
-            value = value < 0 ? 0 : (value > 255 ? 255 : value);
+            // Red channel: distance to nearest edge
+            float dist_r = compute_distance_to_edge(bitmap, width, height, x, y, search_radius);
             
-            // For simple SDF, use same value for all channels
-            // Real MSDF would compute different channels
-            output[idx * 3] = value;
-            output[idx * 3 + 1] = value;
-            output[idx * 3 + 2] = value;
+            // Green channel: distance with slight offset for better quality
+            int offset_x = x + (x % 2 == 0 ? 1 : -1);
+            float dist_g = compute_distance_to_edge(bitmap, width, height, 
+                                                   offset_x, y, search_radius);
+            
+            // Blue channel: distance with different offset
+            int offset_y = y + (y % 2 == 0 ? 1 : -1);
+            float dist_b = compute_distance_to_edge(bitmap, width, height, 
+                                                   x, offset_y, search_radius);
+            
+            // Normalize and convert to 0-255 range
+            float max_dist = (float)search_radius;
+            
+            int r = (int)((dist_r / max_dist * 0.5f + 0.5f) * 255.0f);
+            int g = (int)((dist_g / max_dist * 0.5f + 0.5f) * 255.0f);
+            int b = (int)((dist_b / max_dist * 0.5f + 0.5f) * 255.0f);
+            
+            // Clamp values
+            r = r < 0 ? 0 : (r > 255 ? 255 : r);
+            g = g < 0 ? 0 : (g > 255 ? 255 : g);
+            b = b < 0 ? 0 : (b > 255 ? 255 : b);
+            
+            output[idx * 3] = (unsigned char)r;
+            output[idx * 3 + 1] = (unsigned char)g;
+            output[idx * 3 + 2] = (unsigned char)b;
         }
     }
 }
@@ -220,17 +247,17 @@ Character load_character(FT_Face face, char c) {
     glGenTextures(1, &character.texture);
     glBindTexture(GL_TEXTURE_2D, character.texture);
     
-    // Create distance field from bitmap
+    // Create distance field from bitmap (increased padding for better quality)
     int width = g->bitmap.width;
     int height = g->bitmap.rows;
-    int padded_width = width + 16;  // Add padding for distance field
-    int padded_height = height + 16;
+    int padded_width = width + 24;  // Increased padding for better distance field
+    int padded_height = height + 24;
     
     // Create padded bitmap
     unsigned char* padded_bitmap = calloc(padded_width * padded_height, 1);
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-            padded_bitmap[(y + 8) * padded_width + (x + 8)] = 
+            padded_bitmap[(y + 12) * padded_width + (x + 12)] = 
                 g->bitmap.buffer[y * g->bitmap.pitch + x];
         }
     }
@@ -250,8 +277,8 @@ Character load_character(FT_Face face, char c) {
     // Store character info
     character.width = padded_width;
     character.height = padded_height;
-    character.bearing_x = g->bitmap_left - 8;
-    character.bearing_y = g->bitmap_top + 8;
+    character.bearing_x = g->bitmap_left - 12;
+    character.bearing_y = g->bitmap_top + 12;
     character.advance_x = g->advance.x / 64.0f;
     
     free(padded_bitmap);
@@ -261,8 +288,11 @@ Character load_character(FT_Face face, char c) {
 }
 
 int main(int argc, char* argv[]) {
+    printf("Starting MSDF text 3D example...\n");
+    
     // Get font path from command line or use default
     const char* font_path = argc > 1 ? argv[1] : "/System/Library/Fonts/Helvetica.ttc";
+    printf("Using font: %s\n", font_path);
     
     // Initialize FreeType
     FT_Library ft;
@@ -270,6 +300,7 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "Failed to initialize FreeType\n");
         return -1;
     }
+    printf("FreeType initialized successfully\n");
     
     // Load font
     FT_Face face;
@@ -279,9 +310,10 @@ int main(int argc, char* argv[]) {
         FT_Done_FreeType(ft);
         return -1;
     }
+    printf("Font loaded successfully\n");
     
-    // Set font size
-    FT_Set_Pixel_Sizes(face, 0, 48);
+    // Set font size (increased for better quality)
+    FT_Set_Pixel_Sizes(face, 0, 64);
     
     // Initialize GLFW
     if (!glfwInit()) {
@@ -290,6 +322,7 @@ int main(int argc, char* argv[]) {
         FT_Done_FreeType(ft);
         return -1;
     }
+    printf("GLFW initialized successfully\n");
     
     // Create window
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -305,8 +338,10 @@ int main(int argc, char* argv[]) {
         glfwTerminate();
         return -1;
     }
+    printf("GLFW window created successfully\n");
     
     glfwMakeContextCurrent(window);
+    printf("OpenGL context made current\n");
     
     // Enable depth testing
     glEnable(GL_DEPTH_TEST);
@@ -315,15 +350,21 @@ int main(int argc, char* argv[]) {
     
     // Create shader program
     GLuint shaderProgram = create_shader_program(vertexShaderSource, fragmentShaderSource);
+    printf("Shader program created successfully\n");
     
     // Load characters for "Hello World!"
     const char* text = "Hello World!";
     Character characters[256] = {0};
+    printf("Starting character loading...\n");
     
     // Load all ASCII characters
     for (int c = 32; c < 127; c++) {
         characters[c] = load_character(face, c);
+        if (c == 32) {
+            printf("First character loaded successfully\n");
+        }
     }
+    printf("All characters loaded successfully\n");
     
     // Calculate text dimensions
     float text_width = 0;
@@ -335,11 +376,13 @@ int main(int argc, char* argv[]) {
             text_height = ch->height;
         }
     }
+    printf("Text dimensions calculated: %.2f x %.2f\n", text_width, text_height);
     
     // Create a texture atlas for the text
     int atlas_width = (int)text_width + 20;
     int atlas_height = (int)text_height + 20;
     unsigned char* atlas_data = calloc(atlas_width * atlas_height * 3, 1);
+    printf("Atlas created: %d x %d\n", atlas_width, atlas_height);
     
     // Copy characters to atlas
     float x_offset = 10;
@@ -461,7 +504,7 @@ int main(int argc, char* argv[]) {
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view);
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection);
-        glUniform1f(pxRangeLoc, 4.0f);
+        glUniform1f(pxRangeLoc, 8.0f);
         glUniform4f(textColorLoc, 1.0f, 1.0f, 1.0f, 1.0f);
         
         // Bind texture

@@ -50,8 +50,7 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that r
 
 ## Critical Issues Status (Updated 2025-06-27)
 ### 🚨 Open Blocking Issues - Immediate Developer Assignment Needed
-- **Issue #8**: MSDF 3D Text Rendering Completely Broken (CRITICAL - blocks core editor functionality) 
-- **Issue #9**: Core Input System Not Working - Keyboard/Mouse failures (CRITICAL - blocks interaction)
+- **Issue #8**: MSDF 3D Text Rendering Completely Broken (CRITICAL - blocks core editor functionality)
 - **Issue #10**: ECS Component Registration and System Execution Failures (HIGH - core architecture broken)
 
 ### ✅ Resolved Issues
