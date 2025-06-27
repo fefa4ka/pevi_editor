@@ -1,3 +1,0 @@
-/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/cimgui-populate.dir
-/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/edit_cache.dir
-/Users/fefa4ka/Documents/my/pevi_editor/build/_deps/cimgui-subbuild/CMakeFiles/rebuild_cache.dir

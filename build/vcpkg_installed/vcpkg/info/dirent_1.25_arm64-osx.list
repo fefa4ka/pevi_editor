@@ -1,5 +1,0 @@
-arm64-osx/
-arm64-osx/share/
-arm64-osx/share/dirent/
-arm64-osx/share/dirent/vcpkg.spdx.json
-arm64-osx/share/dirent/vcpkg_abi_info.txt
