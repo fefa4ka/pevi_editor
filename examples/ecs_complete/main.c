@@ -87,6 +87,15 @@ int main(void) {
     CreateFileInstance(world, "editor.c");
     CreateFileInstance(world, "renderer.c");
     
+    // Create query for text rendering (create once, reuse in main loop)
+    ecs_query_t *text_render_query = ecs_query(world, {
+        .terms = {
+            { ecs_id(Position) },
+            { ecs_id(TextContent) },
+            { ecs_id(Visible) }
+        }
+    });
+
     printf("ECS world initialized with %d entities\n", ecs_count_id(world, EcsAny));
     
     // Performance tracking variables
@@ -131,15 +140,7 @@ int main(void) {
             DrawLine3D((Vector3){0, 0, 0}, (Vector3){0, 0, 5}, BLUE);   // Z axis
 
             // Render all 3D text entities
-            ecs_query_t *text_query = ecs_query(world, {
-                .terms = {
-                    { ecs_id(Position) },
-                    { ecs_id(TextContent) },
-                    { ecs_id(Visible) }
-                }
-            });
-            
-            ecs_iter_t text_iter = ecs_query_iter(world, text_query);
+            ecs_iter_t text_iter = ecs_query_iter(world, text_render_query);
             
             while (ecs_query_next(&text_iter)) {
                 Position *positions = ecs_field(&text_iter, Position, 0);

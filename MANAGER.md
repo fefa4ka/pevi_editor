@@ -1,15 +1,15 @@
 # Pevi Editor - Project Management Overview
 
-## Project Status: FUNCTIONAL ✅
+## Project Status: NEEDS TESTING ⚠️
 *Last Updated: June 27, 2025*
 
-### **What We Have Working:**
-- ✅ **Core ECS Architecture**: Flecs ECS with proper component/system patterns
-- ✅ **3D Text Rendering**: Billboard-style 3D text display with camera context
-- ✅ **Navigation System**: Camera controls and 3D movement working
-- ✅ **Input Handling**: Mouse/keyboard input for navigation mode
-- ✅ **Examples Running**: Both simple and complete ECS examples functional
-- ✅ **Build System**: CMake builds successfully on macOS ARM64
+### **Current State - Requires Manual Testing:**
+- 🔧 **Build System**: Compiles successfully, executables exist
+- ❓ **Core Application**: Unknown if main editor functions properly
+- ❓ **ECS Examples**: Unknown if spatial editors work correctly
+- ❓ **Component Integration**: Unknown if all systems integrate
+- ❓ **3D Rendering**: Unknown if graphics/text render properly
+- ❓ **Input Handling**: Unknown if navigation/controls work
 
 ### **What We're Building:**
 Pevi is a **3D spatial code editor** where code appears as floating "phantoms" (3D objects) arranged by **mnemonic sense** - meaning code is positioned in 3D space based on how developers naturally think about and remember relationships (call flow, data flow, hierarchy).
@@ -69,29 +69,29 @@ Services Layer: Renderer (Raylib), input, file I/O, UI
 
 ## **Next Priority Actions**
 
-### **Phase 1: Clean Up Repository (URGENT)**
-1. Fix .gitignore to exclude build artifacts
-2. Clean working directory of build files
-3. Push the 27 commits to origin/master
-4. Set up proper branch protection and PR workflow
+### **Phase 1: URGENT - Manual Testing (CURRENT)**
+**GitHub Issues Created:**
+- Issue #2: Test core application startup and basic functionality
+- Issue #3: Test ECS spatial editor examples
+- Issue #4: Test all standalone examples and integrations  
+- Issue #5: Test build system from clean environment
+- Issue #6: Clean git repository and sync (BLOCKER)
 
-### **Phase 2: Establish GitHub Workflow**
-1. Create GitHub Issues for all TODO items
+**CRITICAL**: We need to complete manual testing before any new development. Current claims of functionality are unverified.
+
+### **Phase 2: Fix Critical Issues**
+Based on testing results, create specific bug fix issues for:
+- Application crashes or startup failures
+- Graphics/rendering problems
+- Input handling bugs
+- Build system issues
+- Integration failures
+
+### **Phase 3: Establish Development Workflow** 
+1. Complete git repository cleanup (Issue #6)
 2. Set up branch protection requiring PR reviews
-3. Create issue templates for bugs and features
-4. Establish labeling system (bug, feature, enhancement, cleanup)
-
-### **Phase 3: Consolidate Documentation**
-1. Merge relevant content from CLAUDE.md and TODO.md into README.md
-2. Keep ARCHITECTURE.md focused on technical architecture only
-3. Remove redundant documentation files
-4. Create clear development workflow documentation
-
-### **Phase 4: Team Development Setup**
-1. Create development guidelines for contributors
-2. Set up CI/CD for automated builds and tests
-3. Establish code review requirements
-4. Create contributor guidelines
+3. Create issue templates and development guidelines
+4. Establish CI/CD for automated testing
 
 ---
 
