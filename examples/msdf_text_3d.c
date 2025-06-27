@@ -384,35 +384,34 @@ int main(int argc, char* argv[]) {
     unsigned char* atlas_data = calloc(atlas_width * atlas_height * 3, 1);
     printf("Atlas created: %d x %d\n", atlas_width, atlas_height);
     
-    printf("Atlas copying completed (skipped problematic glGetTexImage)\n");
+    printf("Setting up texture from actual character data...\n");
     
-    // Create atlas with direct character data (avoiding glGetTexImage)
-    GLuint atlas_texture;
-    glGenTextures(1, &atlas_texture);
-    glBindTexture(GL_TEXTURE_2D, atlas_texture);
-    
-    // Fill atlas with proper distance field center value (not invisible gray)
-    for (int i = 0; i < atlas_width * atlas_height; i++) {
-        atlas_data[i * 3] = 255;     // R - white for visible text
-        atlas_data[i * 3 + 1] = 255; // G - white for visible text  
-        atlas_data[i * 3 + 2] = 255; // B - white for visible text
+    // Use the actual character texture instead of creating a blank atlas
+    // Find the 'H' character which should have good MSDF data
+    Character* display_char = &characters['H'];
+    if (display_char->texture == 0) {
+        // Fallback to any available character  
+        for (int c = 32; c < 127; c++) {
+            if (characters[c].texture != 0) {
+                display_char = &characters[c];
+                printf("Using character '%c' instead of 'H'\n", c);
+                break;
+            }
+        }
     }
     
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, atlas_width, atlas_height, 0, 
-                 GL_RGB, GL_UNSIGNED_BYTE, atlas_data);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    printf("Atlas texture created with white fill\n");
+    GLuint atlas_texture = display_char->texture;
+    printf("Using character texture %u (dimensions: %dx%d)\n", 
+           atlas_texture, display_char->width, display_char->height);
     
     // Don't free atlas_data since we're not using it
     free(atlas_data);
     
     // Create a quad for text rendering with proper aspect ratio  
-    float aspect = (float)atlas_width / (float)atlas_height;
+    float aspect = (float)display_char->width / (float)display_char->height;
     float quad_height = 2.0f;
     float quad_width = quad_height * aspect;
+    printf("Quad dimensions: %.2fx%.2f (aspect: %.2f)\n", quad_width, quad_height, aspect);
     
     float vertices[] = {
         // positions                      // texture coords
