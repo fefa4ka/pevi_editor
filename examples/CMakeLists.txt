@@ -49,8 +49,17 @@ else()
     )
 endif()
 
+# Build the flecs simple system example
+add_executable(flecs_simple_system flecs_simple_system.c)
+target_link_libraries(flecs_simple_system PRIVATE flecs::flecs_static)
+
 # Add the comprehensive ECS complete example subdirectory
 add_subdirectory(ecs_complete)
+
+# Set common properties for examples
+set_target_properties(flecs_simple_system PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/examples
+)
 
 # Set common properties for examples
 set_target_properties(raylib_example joltc_example libuv_example flecs_example flecs_hierarchy_example flecs_basic_entity_component flecs_pevi_basic msdf_text_3d PROPERTIES
