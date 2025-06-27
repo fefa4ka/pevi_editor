@@ -9,6 +9,40 @@ set(CMAKE_C_EXTENSIONS OFF) # Optional: Disable GNU extensions if strict C11 is 
 # --- Find Dependencies ---
 include(FetchContent)
 
+# Add vcpkg module paths if vcpkg_installed directory exists
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed")
+    # Detect the platform-specific directory
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+        set(VCPKG_TARGET_TRIPLET "arm64-osx")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(VCPKG_TARGET_TRIPLET "x64-osx")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(VCPKG_TARGET_TRIPLET "x64-linux")
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+        if(CMAKE_SYSTEM_PROCESSOR STREQUAL "AMD64")
+            set(VCPKG_TARGET_TRIPLET "x64-windows")
+        else()
+            set(VCPKG_TARGET_TRIPLET "x86-windows")
+        endif()
+    endif()
+    
+    if(VCPKG_TARGET_TRIPLET)
+        message(STATUS "Detected vcpkg triplet: ${VCPKG_TARGET_TRIPLET}")
+        set(VCPKG_INSTALLED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg_installed/${VCPKG_TARGET_TRIPLET}")
+        
+        if(EXISTS "${VCPKG_INSTALLED_DIR}")
+            # Add vcpkg paths to CMAKE_PREFIX_PATH
+            list(APPEND CMAKE_PREFIX_PATH "${VCPKG_INSTALLED_DIR}")
+            list(APPEND CMAKE_MODULE_PATH "${VCPKG_INSTALLED_DIR}/share")
+            
+            # Set PKG_CONFIG_PATH for pkg-config based discovery
+            set(ENV{PKG_CONFIG_PATH} "${VCPKG_INSTALLED_DIR}/lib/pkgconfig:$ENV{PKG_CONFIG_PATH}")
+            
+            message(STATUS "Using vcpkg installed packages from: ${VCPKG_INSTALLED_DIR}")
+        endif()
+    endif()
+endif()
+
 # Clone and build joltc
 FetchContent_Declare(
     joltc
