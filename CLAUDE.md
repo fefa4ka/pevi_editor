@@ -1,12 +1,12 @@
 # Claude Development Guide for Pevi
 
 ## Quick Reference
-Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses C11, CMake, Raylib, JoltC physics, Flecs ECS, ImGui, and lr_text buffers.
+Pevi is a 3D spatial code editor with phantoms (floating 3D code objects) that represent semantic parts of code arranged by mnemonic sense. A single file is edited through multiple phantoms, each displaying functions, classes, or logical code blocks positioned in 3D space for intuitive navigation and understanding. Uses C11, CMake, Raylib, JoltC physics, Flecs ECS, ImGui, and lr_text buffers.
 
 ## Key Development Info
 - **Entry Point**: `src/main.c` (currently minimal Raylib window)
 - **Build**: `cmake --build build && ./build/editor`
-- **Current State**: ✅ **ECS COMPLETE EXAMPLE WORKING** - All compilation and runtime issues resolved
+- **Current State**: ✅ **3D TEXT RENDERING FIXED** - All compilation, runtime, and rendering issues resolved
 
 ## ECS Examples Status
 - ✅ `build/examples/ecs_complete/spatial_editor_simple` - Simple ECS demo works
@@ -23,6 +23,9 @@ Pevi is a 3D spatial code editor with phantoms (floating 3D code objects). Uses 
 - ✅ **NEW**: Fixed InputSystem and PickingSystem query mismatch - systems now use singleton pattern to access Editor and MainCamera entities
 - ✅ **NEW**: Fixed system registration and removed problematic pipeline phases
 - ✅ **NEW**: Navigation, camera control, and input now working properly in spatial_editor example
+- ✅ **LATEST**: Fixed 3D text rendering by moving from TextRenderSystem to main render loop with proper camera context
+- ✅ **LATEST**: Optimized text rendering query creation - created once at initialization instead of every frame
+- ✅ **LATEST**: Implemented billboard-style 3D text rendering with background for better visibility
 
 ## ECS Development Guidelines
 
@@ -243,9 +246,10 @@ lldb build/examples/flecs_basic_entity_component
 ## Key Implementation Areas
 - ✅ Core ECS setup with Flecs
 - ✅ Basic phantom entity creation and management
-- [ ] Camera controller implementation
-- [ ] Text rendering system
-- [ ] Input handling for different modes
+- ✅ Camera controller implementation
+- ✅ 3D text rendering system (billboard-style with proper camera context)
+- ✅ Input handling for navigation mode
+- [ ] Input handling for edit and command modes
 - [ ] File I/O integration
 - [ ] Command system implementation
 
